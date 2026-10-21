@@ -4,12 +4,12 @@ import { useTracker } from "@/state/tracker";
 import { Button } from "./Button";
 
 /**
- * What the viewer needs to do to get data showing: pick the folder, allow access again, choose
- * between workbooks, or retry after an error. Renders nothing once data is loaded.
+ * What the viewer needs to do to get data showing: pick the folder, allow access again, or retry
+ * after an error. Renders nothing once data is loaded.
  */
 export function ConnectionPrompt() {
-  const { phase, folder, fileName, workbooks, error } = useTracker();
-  const { connectFolder, allowAccess, chooseFile, reload } = useTracker.getState();
+  const { phase, folder, fileName, error } = useTracker();
+  const { connectFolder, allowAccess, reload } = useTracker.getState();
 
   switch (phase) {
     case "starting":
@@ -47,23 +47,6 @@ export function ConnectionPrompt() {
                 <KeyRound size={16} /> Allow access
               </Button>
               <Button onClick={() => void connectFolder()}>Change folder</Button>
-            </div>
-          }
-        />
-      );
-
-    case "choose-file":
-      return (
-        <Message
-          title="Which workbook is the tracker?"
-          detail={`"${folder?.name}" has more than one Excel workbook.`}
-          action={
-            <div className="flex flex-wrap gap-2">
-              {workbooks.map((name) => (
-                <Button key={name} onClick={() => void chooseFile(name)}>
-                  {name}
-                </Button>
-              ))}
             </div>
           }
         />

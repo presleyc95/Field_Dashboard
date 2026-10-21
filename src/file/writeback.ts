@@ -80,6 +80,8 @@ export async function saveUploads(
     await writable.write(result.bytes as Uint8Array<ArrayBuffer>);
     await writable.close();
   } catch (err) {
+    // Nothing changed (e.g. the tracker is open in Excel), so the backup is just a duplicate.
+    await removeBackup(folder, backupName);
     throw describeWriteError(err, fileName);
   }
 
@@ -128,6 +130,14 @@ async function writeBackup(folder: FileSystemDirectoryHandle, fileName: string, 
   }
   for (const old of mine.sort().slice(0, -BACKUPS_KEPT)) await dir.removeEntry(old);
   return name;
+}
+
+async function removeBackup(folder: FileSystemDirectoryHandle, name: string) {
+  try {
+    await (await folder.getDirectoryHandle(BACKUP_DIR)).removeEntry(name);
+  } catch {
+    // Leaving an extra backup is harmless.
+  }
 }
 
 async function appendLog(folder: FileSystemDirectoryHandle, entry: unknown) {

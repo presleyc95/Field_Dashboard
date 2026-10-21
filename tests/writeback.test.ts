@@ -130,11 +130,15 @@ describe.skipIf(!existsSync(WORKBOOK))("marking uploads in a copy of the real tr
       const y = await b.file(name)!.async("uint8array");
       if (x.length !== y.length || x.some((v, i) => v !== y[i])) differing.push(name);
     }
-    expect(differing.sort()).toEqual(["xl/workbook.xml", "xl/worksheets/sheet1.xml"]);
+    // The sheet always changes; workbook.xml only gains the recalculate flag, so it's unchanged when
+    // an earlier save already set it.
+    expect(differing).toContain("xl/worksheets/sheet1.xml");
+    expect(differing.filter((n) => n !== "xl/worksheets/sheet1.xml" && n !== "xl/workbook.xml")).toEqual([]);
 
     const wa = await a.file("xl/workbook.xml")!.async("string");
     const wb = await b.file("xl/workbook.xml")!.async("string");
-    expect(wb.replace(' fullCalcOnLoad="1"', "")).toBe(wa);
+    expect(wb).toBe(recalcOnOpen(wa));
+    expect(wb).toContain('fullCalcOnLoad="1"');
   }, 60_000);
 
   it("skips rows that changed, and rows already marked", async () => {

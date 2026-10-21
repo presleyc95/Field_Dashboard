@@ -7,7 +7,8 @@
 import { del, get, keys, set } from "idb-keyval";
 
 const FOLDER_KEY = "tracker-folder";
-const FILE_KEY = "tracker-file-name";
+/** Used by earlier versions to remember a picked workbook; cleared on disconnect. */
+const OLD_FILE_KEY = "tracker-file-name";
 
 export function isSupported(): boolean {
   return typeof window !== "undefined" && "showDirectoryPicker" in window;
@@ -30,7 +31,7 @@ export async function savedFolder(): Promise<FileSystemDirectoryHandle | null> {
 
 export async function forgetFolder() {
   await del(FOLDER_KEY);
-  await del(FILE_KEY);
+  await del(OLD_FILE_KEY);
 }
 
 export async function hasPermission(folder: FileSystemDirectoryHandle): Promise<boolean> {
@@ -42,9 +43,7 @@ export async function requestPermission(folder: FileSystemDirectoryHandle): Prom
   return (await folder.requestPermission({ mode: "read" })) === "granted";
 }
 
-/**
- * Excel workbooks in the folder, likeliest tracker first. Skips Excel's `~$` lock files.
- */
+/** Excel workbooks in the folder. Skips Excel's `~$` lock files. */
 export async function findWorkbooks(folder: FileSystemDirectoryHandle): Promise<string[]> {
   const names: string[] = [];
   for await (const entry of folder.values()) {
@@ -52,23 +51,24 @@ export async function findWorkbooks(folder: FileSystemDirectoryHandle): Promise<
       names.push(entry.name);
     }
   }
-  const score = (name: string) => (/field tracker/i.test(name) ? 0 : 1);
-  return names.sort((a, b) => score(a) - score(b) || a.localeCompare(b));
+  return names;
 }
 
 /**
- * The yearly master trackers in a folder ("TSG Field Tracker - Master 2025.xlsx", "… 2026.xlsx"),
- * oldest first, so the last one is the current year.
+ * A yearly master tracker: "Master" in the name and a year right before ".xlsx"
+ * ("TSG Field Tracker - Master 2026.xlsx"). Copies like "… Master 2026 (backup).xlsx" don't count.
  */
+const MASTER_TRACKER = /master.*?(?:^|\D)(20\d\d)\.xlsx$/i;
+
+/** The yearly master trackers among these file names, oldest first (the last is the current year). */
 export function trackerWorkbooks(names: string[]): string[] {
   return names
-    .filter((n) => /field tracker/i.test(n))
-    .sort((a, b) => (yearIn(a) ?? 0) - (yearIn(b) ?? 0) || a.localeCompare(b));
+    .filter((n) => !n.startsWith("~$") && MASTER_TRACKER.test(n.trim()))
+    .sort((a, b) => yearIn(a) - yearIn(b) || a.localeCompare(b));
 }
 
-function yearIn(name: string): number | null {
-  const m = /(?:^|\D)(20\d\d)(?:\D|$)/.exec(name);
-  return m ? Number(m[1]) : null;
+function yearIn(name: string): number {
+  return Number(MASTER_TRACKER.exec(name.trim())?.[1] ?? 0);
 }
 
 /**
@@ -94,18 +94,6 @@ export async function cacheWorkbook(key: string, value: unknown, keep: string[])
   } catch {
     // Caching is only a speed-up; loading still works without it.
   }
-}
-
-export async function savedFileName(): Promise<string | null> {
-  try {
-    return (await get<string>(FILE_KEY)) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function saveFileName(name: string) {
-  await set(FILE_KEY, name);
 }
 
 export async function readFile(folder: FileSystemDirectoryHandle, name: string): Promise<File> {

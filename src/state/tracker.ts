@@ -2,7 +2,7 @@
  * Tracker connection and loaded data. One store for the whole app: which folder and workbooks are
  * connected, the loaded dataset, and what the viewer needs to do next.
  *
- * A new master tracker starts every year. Every "… Field Tracker …" workbook in the folder is
+ * A new master tracker starts every year. Every "… Master YYYY.xlsx" workbook in the folder is
  * loaded and merged, oldest first; the newest year is the current one. Past years rarely change,
  * so their parsed rows are cached in the browser and only the current year is parsed each time.
  */
@@ -23,8 +23,6 @@ export type Phase =
   | "needs-folder"
   /** A folder is remembered, but this session needs a click to allow access again. */
   | "needs-permission"
-  /** The folder has workbooks but none named like a field tracker, and none has been picked. */
-  | "choose-file"
   | "loading"
   | "ready"
   | "error";
@@ -38,8 +36,6 @@ type TrackerState = {
   fileName: string | null;
   /** Every workbook loaded, oldest first. */
   files: LoadedFile[];
-  /** Workbooks in the folder, for choosing between them. */
-  workbooks: string[];
   dataset: Dataset | null;
   loadedAt: number | null;
   loadMs: number | null;
@@ -50,7 +46,6 @@ type TrackerState = {
   start: () => Promise<void>;
   connectFolder: () => Promise<void>;
   allowAccess: () => Promise<void>;
-  chooseFile: (name: string) => Promise<void>;
   reload: () => Promise<void>;
   checkForChanges: () => Promise<void>;
   disconnect: () => Promise<void>;
@@ -59,24 +54,18 @@ type TrackerState = {
 const cacheKey = (f: File) => `v${PARSER_VERSION}:${f.name}:${f.size}:${f.lastModified}`;
 
 export const useTracker = create<TrackerState>()((setState, getState) => {
-  /** Finds the tracker workbooks in the folder, then loads them. */
+  /** Finds the yearly master trackers in the folder, then loads them. */
   async function openFolder(folder: FileSystemDirectoryHandle) {
-    const workbooks = await access.findWorkbooks(folder);
-    setState({ folder, workbooks });
-    if (workbooks.length === 0) {
-      setState({ phase: "error", error: `No Excel workbooks found in "${folder.name}". Pick the folder that holds the TSG Field Tracker.` });
+    setState({ folder });
+    const trackers = access.trackerWorkbooks(await access.findWorkbooks(folder));
+    if (trackers.length === 0) {
+      setState({
+        phase: "error",
+        error: `No master trackers in "${folder.name}". The dashboard loads workbooks named like "TSG Field Tracker - Master 2026.xlsx" (with the year at the end). Pick the folder that holds them.`,
+      });
       return;
     }
-    const trackers = access.trackerWorkbooks(workbooks);
-    if (trackers.length) {
-      await load(trackers);
-      return;
-    }
-    // No file is named like a tracker: use the one picked before, the only one, or ask.
-    const remembered = await access.savedFileName();
-    const name = remembered && workbooks.includes(remembered) ? remembered : workbooks.length === 1 ? workbooks[0]! : null;
-    if (name) await load([name]);
-    else setState({ phase: "choose-file" });
+    await load(trackers);
   }
 
   /** Loads workbooks, oldest first; the last is the current year. */
@@ -104,7 +93,6 @@ export const useTracker = create<TrackerState>()((setState, getState) => {
         const raw = parsed[file.name];
         if (raw) await access.cacheWorkbook(cacheKey(file), raw, pastKeys);
       }
-      await access.saveFileName(current);
 
       setState({
         phase: "ready",
@@ -125,7 +113,6 @@ export const useTracker = create<TrackerState>()((setState, getState) => {
     folder: null,
     fileName: null,
     files: [],
-    workbooks: [],
     dataset: null,
     loadedAt: null,
     loadMs: null,
@@ -168,7 +155,6 @@ export const useTracker = create<TrackerState>()((setState, getState) => {
       }
     },
 
-    chooseFile: (name) => load([name]),
 
     async reload() {
       const { folder } = getState();
@@ -204,7 +190,6 @@ export const useTracker = create<TrackerState>()((setState, getState) => {
         folder: null,
         fileName: null,
         files: [],
-        workbooks: [],
         dataset: null,
         loadedAt: null,
         loadMs: null,

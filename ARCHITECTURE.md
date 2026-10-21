@@ -90,9 +90,11 @@ The main sheet XML is ~45 MB uncompressed.
 
 A new master tracker is started every year, so the dashboard combines all of them into one history.
 
-- **Which files:** every workbook in the connected folder whose name contains "Field Tracker", ordered by the year in
-  its name. The newest is the **current** tracker; older ones are history. A new year's workbook dropped into the
-  folder is picked up on the next check (every 30 s) with no setup.
+- **Which files:** only master trackers: workbooks whose name contains "Master" and ends with a year right before
+  `.xlsx` ("TSG Field Tracker - Master 2026.xlsx"), ordered by that year. Copies like "… Master 2026 (backup).xlsx"
+  and any other workbooks in the folder are ignored; a folder with no master trackers shows a message instead of
+  asking which file to use. The newest is the **current** tracker; older ones are history. A new year's master
+  dropped into the folder is picked up on the next check (every 30 s) with no setup.
 - **Same layout every year:** columns are found by header name, so small layout changes between years are fine.
   The 2025 tracker has the same columns plus extra helper columns, which are ignored.
 - **Overlap at New Year:** trackers run a little past Dec 31 (2025's has rows into Jan 2026), and the next one starts
@@ -291,7 +293,10 @@ in the dashboard → Save.
   (every other part identical when unzipped; JSZip re-compresses, so the file is smaller but the content is the same);
   the marked copy opened in Excel with alerts on, no repair prompt, 12 sheets, table and pivot intact, cells = Yes.
 - Full flow tested in the browser on test copies (origin-private storage): load, editing on, mark, save, backup,
-  log, confirm, reload. **Not yet tested:** the refusal when the tracker is open in Excel on the real synced folder.
+  log, confirm, reload.
+- First real save, 2026-10-21 on the live site: row 20170 marked; compared with its backup, only that row changed
+  and only `sheet1.xml` and `workbook.xml` differed. An earlier attempt left a backup but no change (most likely
+  refused because Excel had the tracker open); a refused save now removes its backup.
 
 **Data-quality rules changed 2026-10-21 (by request):** Coordinator and Drive Time rows don't need a Status, and a
 tech listed as their own partner is no longer flagged (it's read as solo). The Hitches page has a month calendar.

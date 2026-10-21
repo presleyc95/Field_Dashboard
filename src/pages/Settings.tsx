@@ -38,7 +38,7 @@ export function Settings() {
 
             {error && <p className="text-xs text-negative">{error}</p>}
             <p className="text-xs text-fg-subtle">
-              Every workbook in the folder named like "TSG Field Tracker - Master 2026.xlsx" is loaded and combined into
+              Every master tracker in the folder (named like "TSG Field Tracker - Master 2026.xlsx", with the year at the end) is loaded and combined into
               one history; the newest year is the current one. When next year's tracker is added to the folder, it's picked
               up on its own. Past years are read once and kept in this browser, so only the current year is read on each
               load. The dashboard checks the workbooks every 30 seconds and reloads when one is saved.

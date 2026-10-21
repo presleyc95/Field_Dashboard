@@ -69,7 +69,6 @@ const STATUS_TEXT: Record<Phase, string> = {
   unsupported: "Use Chrome or Edge",
   "needs-folder": "No tracker connected",
   "needs-permission": "Access needed",
-  "choose-file": "Choose workbook",
   loading: "Loading",
   ready: "Tracker connected",
   error: "Load failed",
