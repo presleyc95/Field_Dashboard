@@ -9,6 +9,13 @@ export type TrackerRecord = {
   id: number;
   /** 1-based row number in the Excel sheet (used for saving and "find it in Excel"). */
   excelRow: number;
+  /** The workbook the row came from (file name). */
+  source: string;
+  /**
+   * True for rows from the current year's workbook: the only one the upload queue uses and the
+   * app may save to. Past years are read-only history.
+   */
+  editable: boolean;
   opco: string | null;
   umbrella: string | null;
   /** Permit ID as displayed (whitespace tidied); null when the cell is blank. */
@@ -44,6 +51,8 @@ export type IssueKind =
   | "flag";
 
 export type DataIssue = {
+  /** Workbook the row is in. */
+  source: string;
   excelRow: number;
   field: string;
   kind: IssueKind;
@@ -129,7 +138,24 @@ export type ScopeItem = {
   excelRow: number;
 };
 
+/** One tracker workbook that was loaded (one per year). */
+export type SourceInfo = {
+  name: string;
+  /** Year from the file name ("… Master 2026.xlsx"), if it has one. */
+  year: number | null;
+  /** The newest workbook: editable, feeds the upload queue. */
+  current: boolean;
+  /** Data rows in the workbook. */
+  rows: number;
+  /** Rows dropped because a newer workbook has the same row (years overlap around New Year). */
+  replaced: number;
+  firstDate: ISODate | null;
+  lastDate: ISODate | null;
+};
+
 export type Dataset = {
+  /** Workbooks loaded, oldest first; the last one is current. */
+  sources: SourceInfo[];
   records: TrackerRecord[];
   issues: DataIssue[];
   hitches: Hitch[];

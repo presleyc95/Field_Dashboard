@@ -9,7 +9,7 @@
  * - **Poles per tech-day** = credited poles ÷ tech-days. For a pair it's the team's daily
  *   output; for someone solo, their own.
  * - **Upload backlog** = Complete rows of KATAPULT, PCI, GO BACKS or POWER PCI not marked
- *   uploaded (the upload queue rule).
+ *   uploaded, in the current year's workbook (the upload queue rule).
  */
 import { PRODUCTION_TASKS, UPLOAD_TASKS } from "./clean";
 import { addDays, dayNumber, daysBetween } from "./dates";
@@ -21,8 +21,12 @@ export function isProduction(r: TrackerRecord): boolean {
   return !!r.task && PRODUCTION.has(r.task);
 }
 
+/**
+ * In the upload queue: only rows from the current year's workbook (past years didn't use the
+ * Uploaded to Katapult column consistently, and the app never saves to them).
+ */
 export function awaitingUpload(r: TrackerRecord): boolean {
-  return r.status === "Complete" && !!r.task && UPLOAD_TASKS.includes(r.task) && !r.uploaded;
+  return r.editable && r.status === "Complete" && !!r.task && UPLOAD_TASKS.includes(r.task) && !r.uploaded;
 }
 
 /** Names on a row: the logger and their partner. */

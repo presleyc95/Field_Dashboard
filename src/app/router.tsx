@@ -5,6 +5,7 @@ import { People } from "@/pages/People";
 import { PersonProfile } from "@/pages/PersonProfile";
 import { ProjectDetail } from "@/pages/ProjectDetail";
 import { Projects } from "@/pages/Projects";
+import { Quality } from "@/pages/Quality";
 import { Teams } from "@/pages/Teams";
 import { Production } from "@/pages/Production";
 import { Permit } from "@/pages/Permit";
@@ -36,10 +37,7 @@ export const router = createHashRouter([
         path: "queue",
         element: <Placeholder title="Upload Queue" step={7} description="Completed KATAPULT, PCI, GO BACKS and POWER PCI jobs not yet marked uploaded." />,
       },
-      {
-        path: "quality",
-        element: <Placeholder title="Data Quality" step={6} description="Everything the clean-up fixed or flagged, with Excel row numbers." />,
-      },
+      { path: "quality", element: <Quality /> },
       { path: "settings", element: <Settings /> },
       {
         path: "*",

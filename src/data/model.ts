@@ -1,6 +1,10 @@
 /**
  * Turns raw tracker rows into the dashboard's data model (ARCHITECTURE.md §5): cleaned records,
- * permits, people, teams per hitch and OPCOs. Pure function of the workbook and today's date.
+ * permits, people, teams per hitch and OPCOs. Pure function of the workbooks and today's date.
+ *
+ * A new master tracker starts every year, so several workbooks (oldest first) are merged into one
+ * history. The years overlap around New Year: when a newer workbook has the same row (same date,
+ * permit, tech and task), the newer copy wins and the older one is dropped.
  */
 import {
   cleanDate,
@@ -18,33 +22,50 @@ import {
 import { addDays, dayNumber } from "./dates";
 import { buildHitches, HitchIndex } from "./hitches";
 import type { RawWorkbook } from "./parse";
-import type { Dataset, ISODate, Opco, Permit, Person, Team, TrackerRecord } from "./types";
+import type { Dataset, ISODate, Opco, Permit, Person, SourceInfo, Team, TrackerRecord } from "./types";
 import { umbrellaFor } from "./umbrellas";
 
 /** How far past today (or the last data date) the hitch list is continued. */
 const HITCH_LOOKAHEAD_DAYS = 120;
 
-export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
-  const log = new IssueLog();
+/** Workbooks are named "TSG Field Tracker - Master 2026.xlsx"; the year orders them. */
+export function yearOf(name: string): number | null {
+  const m = /(?:^|\D)(20\d\d)(?:\D|$)/.exec(name);
+  return m ? Number(m[1]) : null;
+}
 
-  // Pass 1: count spellings so each OPCO, person and permit gets one consistent spelling.
+/** Rows dated more than this far outside their workbook's year are flagged. */
+const YEAR_SLACK_DAYS = 14;
+
+export function buildDataset(input: RawWorkbook | RawWorkbook[], today: ISODate): Dataset {
+  const raws = Array.isArray(input) ? input : [input];
+  const log = new IssueLog();
+  const sourceName = (raw: RawWorkbook, i: number) => raw.source ?? (raws.length > 1 ? `Workbook ${i + 1}` : "Tracker");
+  const currentIndex = raws.length - 1;
+
+  // Pass 1: count spellings so each OPCO, person and permit gets one consistent spelling across
+  // every year.
   const opcoSpelling = new SpellingPicker();
   const nameSpelling = new SpellingPicker();
   const permitSpelling = new SpellingPicker();
-  const cleaned = raw.rows.map((row) => {
-    const opcoText = row.opco ? tidyText(String(row.opco.v)) : "";
-    const tech = cleanName(row.tech);
-    const partner = cleanName(row.partner);
-    const permit = cleanPermit(row.permitId, row.excelRow, log);
-    if (opcoText) opcoSpelling.add(opcoText);
-    if (tech) nameSpelling.add(tech);
-    if (partner) nameSpelling.add(partner);
-    if (permit.key && permit.text) permitSpelling.add(permit.text);
-    return { row, opcoText, tech, partner, permit };
+  const cleaned = raws.flatMap((raw, fileIndex) => {
+    log.source = sourceName(raw, fileIndex);
+    return raw.rows.map((row) => {
+      const opcoText = row.opco ? tidyText(String(row.opco.v)) : "";
+      const tech = cleanName(row.tech);
+      const partner = cleanName(row.partner);
+      const permit = cleanPermit(row.permitId, row.excelRow, log);
+      if (opcoText) opcoSpelling.add(opcoText);
+      if (tech) nameSpelling.add(tech);
+      if (partner) nameSpelling.add(partner);
+      if (permit.key && permit.text) permitSpelling.add(permit.text);
+      return { row, opcoText, tech, partner, permit, fileIndex, source: log.source };
+    });
   });
 
   // Pass 2: build records.
-  const records: TrackerRecord[] = cleaned.map(({ row, opcoText, tech, partner, permit }, id) => {
+  const built: TrackerRecord[] = cleaned.map(({ row, opcoText, tech, partner, permit, fileIndex, source }, id) => {
+    log.source = source;
     const r = row.excelRow;
     let opco: string | null = null;
     if (opcoText) {
@@ -74,6 +95,8 @@ export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
     return {
       id,
       excelRow: r,
+      source,
+      editable: fileIndex === currentIndex,
       opco,
       umbrella: opco ? umbrellaFor(opco) : null,
       permitId,
@@ -96,18 +119,33 @@ export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
     };
   });
 
+  const fileOf = cleaned.map((c) => c.fileIndex);
+  const { records, replaced } = mergeYears(built, fileOf, raws.length, log);
+
   // Dates and hitches.
   let dataThrough: ISODate | null = null;
   for (const rec of records) {
     if (!rec.date) continue;
     if (dayNumber(rec.date) > dayNumber(today) + 1) {
-      log.add(rec.excelRow, "Date", "flag", "future-date", `Date is in the future (${rec.date})`, rec.date);
+      log.add(rec.excelRow, "Date", "flag", "future-date", `Date is in the future (${rec.date})`, rec.date, rec.source);
       continue;
+    }
+    const year = yearOf(rec.source);
+    if (
+      raws.length > 1 &&
+      year &&
+      (dayNumber(rec.date) < dayNumber(`${year}-01-01`) - YEAR_SLACK_DAYS ||
+        dayNumber(rec.date) > dayNumber(`${year}-12-31`) + YEAR_SLACK_DAYS)
+    ) {
+      log.add(rec.excelRow, "Date", "flag", "outside-tracker-year", `Dated ${rec.date}, outside this ${year} tracker's year`, rec.date, rec.source);
     }
     if (!dataThrough || rec.date > dataThrough) dataThrough = rec.date;
   }
   const coverUntil = addDays(dataThrough && dataThrough > today ? dataThrough : today, HITCH_LOOKAHEAD_DAYS);
-  const hitches = buildHitches(raw.hitches, coverUntil);
+  const hitches = buildHitches(
+    raws.flatMap((r) => r.hitches),
+    coverUntil,
+  );
   const hitchIndex = new HitchIndex(hitches);
   for (const rec of records) {
     const found = rec.date ? hitchIndex.find(rec.date) : null;
@@ -119,7 +157,22 @@ export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
 
   flagDuplicates(records, log);
 
+  const sources: SourceInfo[] = raws.map((raw, i) => {
+    const name = sourceName(raw, i);
+    const dates = records.filter((r) => r.source === name && r.date).map((r) => r.date!);
+    return {
+      name,
+      year: yearOf(name),
+      current: i === currentIndex,
+      rows: raw.rows.length,
+      replaced: replaced[i] ?? 0,
+      firstDate: dates.length ? dates.reduce((a, b) => (b < a ? b : a)) : null,
+      lastDate: dates.length ? dates.reduce((a, b) => (b > a ? b : a)) : null,
+    };
+  });
+
   return {
+    sources,
     records,
     issues: log.issues,
     hitches,
@@ -128,10 +181,42 @@ export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
     teams: buildTeams(records),
     opcos: buildOpcos(records, opcoSpelling),
     // Scope sheets name the OPCO their own way; use the tracker's spelling when it has one.
-    scope: (raw.scope ?? []).map((item) => ({ ...item, opco: opcoSpelling.pick(item.opco) })),
+    scope: raws.flatMap((raw) => raw.scope ?? []).map((item) => ({ ...item, opco: opcoSpelling.pick(item.opco) })),
     dataThrough,
     today,
   };
+}
+
+/**
+ * Drops rows from an older workbook that a newer workbook also has (same date, permit, tech and
+ * task), then renumbers record ids. Rows only in the older workbook are kept.
+ */
+function mergeYears(built: TrackerRecord[], fileOf: number[], files: number, log: IssueLog) {
+  const replaced = new Array<number>(files).fill(0);
+  if (files < 2) return { records: built, replaced };
+
+  const key = (r: TrackerRecord) =>
+    r.date && r.tech ? [r.date, r.permitKey ?? r.permitId?.toUpperCase() ?? "", r.tech, r.task ?? ""].join("|") : null;
+  // Newest file that has each key.
+  const newest = new Map<string, number>();
+  built.forEach((r, i) => {
+    const k = key(r);
+    if (k && (newest.get(k) ?? -1) < fileOf[i]!) newest.set(k, fileOf[i]!);
+  });
+
+  const records: TrackerRecord[] = [];
+  built.forEach((r, i) => {
+    const k = key(r);
+    const owner = k ? newest.get(k)! : fileOf[i]!;
+    if (owner > fileOf[i]!) {
+      replaced[fileOf[i]!]!++;
+      const newer = built.find((b, j) => fileOf[j] === owner && key(b) === k);
+      log.add(r.excelRow, "Date", "fixed", "replaced-by-newer", `Also in ${newer?.source ?? "a newer tracker"} (row ${newer?.excelRow ?? "?"}); using that copy`, r.date, r.source);
+      return;
+    }
+    records.push({ ...r, id: records.length });
+  });
+  return { records, replaced };
 }
 
 /**
@@ -149,13 +234,13 @@ function flagDuplicates(records: TrackerRecord[], log: IssueLog) {
     const mirror = byLogger.get(`${rec.date}|${rec.permitKey}|${rec.partner}`);
     if (!mirror || mirror.id === rec.id) continue;
     // Both rows may name each other; report each pair once.
-    const [first, second] = rec.excelRow < mirror.excelRow ? [rec, mirror] : [mirror, rec];
+    const [first, second] = rec.id < mirror.id ? [rec, mirror] : [mirror, rec];
     const pairKey = `${first.id}|${second.id}`;
     if (reported.has(pairKey)) continue;
     reported.add(pairKey);
     const message = `${rec.tech} and ${rec.partner} both logged this permit on ${rec.date} (rows ${first.excelRow} and ${second.excelRow}); poles may be counted twice`;
-    log.add(first.excelRow, "Permit ID", "flag", "possible-duplicate", message, first.permitId);
-    log.add(second.excelRow, "Permit ID", "flag", "possible-duplicate", message, second.permitId);
+    log.add(first.excelRow, "Permit ID", "flag", "possible-duplicate", message, first.permitId, first.source);
+    log.add(second.excelRow, "Permit ID", "flag", "possible-duplicate", message, second.permitId, second.source);
   }
 }
 

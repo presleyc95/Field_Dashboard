@@ -50,7 +50,8 @@ function Overview({ dataset, hitch }: { dataset: Dataset; hitch: Hitch }) {
   const sameDays = previous
     ? `vs. days 1–${daysCovered} of ${formatShort(previous.start)} hitch`
     : "no earlier hitch to compare";
-  const flagged = dataset.issues.filter((i) => i.kind === "flag").length;
+  const current = dataset.sources.find((s) => s.current)?.name;
+  const flagged = dataset.issues.filter((i) => i.kind === "flag" && i.source === current).length;
 
   const recentHitches = (summaries ?? []).filter((s) => s.hitch.id <= hitch.id && s.rows > 0).slice(-12);
 

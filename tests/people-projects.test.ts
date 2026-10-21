@@ -160,7 +160,7 @@ describe.skipIf(!existsSync(WORKBOOK))("people and projects in the real tracker"
   // The field schedules are switched off for now (READ_FIELD_SCHEDULES); these keep the reader
   // working for when they're turned back on.
   it("can still read the field-queue sheets when switched on", () => {
-    const withScope = buildDataset(readWorkbook(readFileSync(WORKBOOK), true), "2026-10-21");
+    const withScope = buildDataset(readWorkbook(readFileSync(WORKBOOK), { readSchedules: true }), "2026-10-21");
     const sheets = new Set(withScope.scope.map((s) => s.sheet));
     expect(sheets).toEqual(new Set(["RM1 CNP", "RM4 CNP", "Entergy Eng Field Schedule"]));
     expect(withScope.scope.filter((s) => s.sheet === "RM4 CNP")).toHaveLength(10);

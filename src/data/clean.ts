@@ -11,9 +11,11 @@ export type RawCell = { v: unknown; w?: string } | undefined;
 
 export class IssueLog {
   readonly issues: DataIssue[] = [];
+  /** Workbook the rows being cleaned come from; set before each workbook. */
+  source = "";
 
-  add(excelRow: number, field: string, kind: IssueKind, code: string, message: string, original: unknown) {
-    this.issues.push({ excelRow, field, kind, code, message, original: displayText(original) });
+  add(excelRow: number, field: string, kind: IssueKind, code: string, message: string, original: unknown, source = this.source) {
+    this.issues.push({ source, excelRow, field, kind, code, message, original: displayText(original) });
   }
 }
 
@@ -40,8 +42,13 @@ const TASK_ALIASES: Record<string, string> = {
   PCI: "PCI",
   "GO BACKS": "GO BACKS",
   "GO BACK": "GO BACKS",
+  "PCI GO BACK": "GO BACKS",
+  "PCI GO BACKS": "GO BACKS",
   "POWER PCI": "POWER PCI",
   STAKING: "STAKING",
+  "FINAL STAKING": "STAKING",
+  "QC / OTHER": "QA/QC",
+  "QC/OTHER": "QA/QC",
   "DRIVE TIME (MOB/DEMOB)": "DRIVE TIME",
   "DRIVE TIME": "DRIVE TIME",
   DRIVE: "DRIVE TIME",
@@ -78,7 +85,11 @@ export function cleanTask(cell: RawCell, row: number, log: IssueLog): string | n
     log.add(row, "Task", "flag", "missing-task", "No task", "");
     return null;
   }
-  const key = raw.toUpperCase().replace(/-/g, " ").replace(/\s+0$/, "").replace(/\s+/g, " ");
+  const key = raw
+    .toUpperCase()
+    .replace(/-/g, " ")
+    .replace(/\s+0(\.0+)?$/, "")
+    .replace(/\s+/g, " ");
   const task = TASK_ALIASES[key];
   if (!task) {
     log.add(row, "Task", "flag", "unknown-task", `Unrecognized task "${raw}"`, raw);

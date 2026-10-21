@@ -14,7 +14,7 @@ Status: planned, not built. Decisions below were settled on 2026-10-21.
 | Topic | Decision |
 |---|---|
 | Hosting | GitHub Pages: static files only, no server, no database |
-| Data | The synced `TSG Field Tracker - Master 2026.xlsx`, opened by each viewer from their own OneDrive sync folder |
+| Data | The synced yearly master trackers (`TSG Field Tracker - Master 2025.xlsx`, `… 2026.xlsx`, …) in one folder, opened by each viewer from their own OneDrive sync folder and combined into one history (see §3a) |
 | Browsers | Chrome or Edge on Windows (the File System Access API isn't in Firefox, Safari or on phones). Everyone is on Windows, so this is fine. |
 | Data privacy | The workbook never leaves the viewer's computer. The repo holds only app code: **never commit the workbook or any exported data** (`*.xlsx`, `*.csv` in `.gitignore`). |
 | How data gets in | Techs submit time on a Smartsheet form; the field admin copies it into the tracker by hand the next morning. The dashboard never adds rows. |
@@ -83,6 +83,35 @@ scope, burn-down or due dates is deferred.
 Power Query connections and query tables, 2 pivot tables and their cache, a chart, `calcChain.xml`, an add-in
 (webextension), named sheet views, SharePoint `customXml` metadata, data validation and conditional formatting.
 The main sheet XML is ~45 MB uncompressed.
+
+---
+
+## 3a. Yearly trackers (added 2026-10-21)
+
+A new master tracker is started every year, so the dashboard combines all of them into one history.
+
+- **Which files:** every workbook in the connected folder whose name contains "Field Tracker", ordered by the year in
+  its name. The newest is the **current** tracker; older ones are history. A new year's workbook dropped into the
+  folder is picked up on the next check (every 30 s) with no setup.
+- **Same layout every year:** columns are found by header name, so small layout changes between years are fine.
+  The 2025 tracker has the same columns plus extra helper columns, which are ignored.
+- **Overlap at New Year:** trackers run a little past Dec 31 (2025's has rows into Jan 2026), and the next one starts
+  Jan 1. A row in an older tracker that the newer one also has (same date, permit, tech and task) is dropped and the
+  newer copy used; it's logged as "Also in the next year's tracker". Rows only in the older tracker are kept.
+  2025 + 2026: 21 rows replaced.
+- **Hitches:** the Validations lists of all years are combined. 2025's list has start dates only; ends are filled in
+  from the usual 8-day length.
+- **Current year only:** the upload queue, upload backlog and "uploaded" counts use the current tracker's rows only
+  (2025 marked Uploaded to Katapult on only ~10% of rows), and write-back only ever touches the current tracker.
+  Data-quality flags default to the current tracker, with past years one click away.
+- **Row numbers repeat across years,** so every row and issue carries its workbook, and rows show as "2026 · 1157".
+- **Speed:** past years don't change, so their parsed rows are cached in the browser (IndexedDB), keyed by file
+  name, size, last-saved time and `PARSER_VERSION` (bump it whenever parsing changes). Only the current year is
+  parsed on each load. First load with 2025 + 2026: ~5 s measured; later loads should be about the current year's
+  ~2 s (the cache path hasn't been timed on a real folder yet).
+- **2025 spellings handled:** tasks `QC / OTHER` (→ QA/QC), `PCI GO BACK` (→ GO BACKS), `FINAL STAKING` (→ STAKING);
+  OPCO `ONCOR SRP` joins the Oncor umbrella. Timesheet codes logged as tasks (e.g. "TS- 0011- ADMINISTRATION") are
+  flagged as unrecognized tasks.
 
 ---
 

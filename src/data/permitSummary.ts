@@ -23,7 +23,7 @@ export type TaskSummary = {
   people: string[];
   /** Whether this task's photos go to Katapult. */
   uploadable: boolean;
-  /** Completed rows marked uploaded / completed rows (uploadable tasks only). */
+  /** Completed rows marked uploaded / completed rows (uploadable tasks, current year's rows only). */
   uploadsDone: number;
   uploadsTotal: number;
   recordIds: number[];
@@ -69,7 +69,8 @@ export function summarizePermit(dataset: Dataset, permit: Permit): PermitSummary
   const lastDate = permit.lastDate;
   const uploadsDone = tasks.reduce((n, t) => n + t.uploadsDone, 0);
   const uploadsTotal = tasks.reduce((n, t) => n + t.uploadsTotal, 0);
-  const rows = new Set(records.map((r) => r.excelRow));
+  // Rows are identified by workbook + row number: row 1,000 exists in every year's tracker.
+  const rows = new Set(records.map((r) => `${r.source}|${r.excelRow}`));
 
   return {
     permit,
@@ -88,7 +89,7 @@ export function summarizePermit(dataset: Dataset, permit: Permit): PermitSummary
     tasks,
     timeline: buildTimeline(records),
     flags: permitFlags(permit, tasks, dataset.dataThrough),
-    issues: dataset.issues.filter((i) => rows.has(i.excelRow)),
+    issues: dataset.issues.filter((i) => rows.has(`${i.source}|${i.excelRow}`)),
   };
 }
 
@@ -115,7 +116,8 @@ function summarizeTasks(records: TrackerRecord[]): TaskSummary[] {
   return [...byTask.entries()].map(([task, rows]) => {
     const known = rows.filter((r) => r.status !== "Unknown");
     const uploadable = UPLOAD_TASKS.includes(task);
-    const completed = rows.filter((r) => r.status === "Complete");
+    // Uploads count from the current year only: past trackers rarely used Uploaded to Katapult.
+    const completed = rows.filter((r) => r.status === "Complete" && r.editable);
     const dates = rows.map((r) => r.date).filter((d): d is ISODate => !!d);
     return {
       task,

@@ -11,7 +11,7 @@ import { formatShort } from "@/data/dates";
 import { summarizePermit, type TaskSummary, type TimelineEntry } from "@/data/permitSummary";
 import type { Dataset, Hitch, TrackerRecord } from "@/data/types";
 import { cn } from "@/lib/cn";
-import { formatInt, formatNumber, hitchRange } from "@/lib/format";
+import { formatInt, formatNumber, hitchRange, rowLabel } from "@/lib/format";
 import { usePermitsByKey } from "@/state/search";
 import { useTracker } from "@/state/tracker";
 
@@ -117,7 +117,7 @@ export function Permit() {
                   <Wrench size={16} className="mt-0.5 shrink-0" />
                 )}
                 <span>
-                  <span className="text-fg-subtle">Row {i.excelRow} · {i.field}:</span> {i.message}
+                  <span className="text-fg-subtle">Row {rowLabel(i)} · {i.field}:</span> {i.message}
                   {i.kind === "fixed" && <span className="text-fg-subtle"> (fixed in the dashboard)</span>}
                 </span>
               </li>
@@ -270,7 +270,7 @@ function Person({ name }: { name: string | null }) {
 
 function rowColumns(dataset: Dataset): Column<TrackerRecord>[] {
   return [
-    { header: "Row", cell: (r) => <span className="text-fg-subtle">{r.excelRow}</span>, numeric: true },
+    { header: "Row", cell: (r) => <span className="whitespace-nowrap text-fg-subtle">{rowLabel(r)}</span>, numeric: true },
     { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), className: "whitespace-nowrap" },
     {
       header: "Hitch",

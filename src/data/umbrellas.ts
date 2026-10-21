@@ -19,7 +19,7 @@ export const UMBRELLAS: Record<string, string[]> = {
     "SWEPCO SMALL WIRE",
   ],
   Entergy: ["ENTERGY", "ENTERGY POLE INSPECTION"],
-  Oncor: ["ONCOR", "ONCOR ENGINEERING"],
+  Oncor: ["ONCOR", "ONCOR ENGINEERING", "ONCOR SRP"],
 };
 
 const BY_OPCO = new Map<string, string>(

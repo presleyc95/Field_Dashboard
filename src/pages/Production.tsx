@@ -12,7 +12,7 @@ import { formatShort } from "@/data/dates";
 import { type Group, type GroupBy, groupRecords, recordsBetween, recordsInHitch, totals } from "@/data/metrics";
 import type { Dataset, Hitch, TrackerRecord } from "@/data/types";
 import { cn } from "@/lib/cn";
-import { formatInt, formatNumber, formatRate, hitchRange } from "@/lib/format";
+import { formatInt, formatNumber, formatRate, hitchRange, rowLabel } from "@/lib/format";
 import { useFocusHitch, useHitchSummaries } from "@/state/metrics";
 import { useTracker } from "@/state/tracker";
 
@@ -285,5 +285,5 @@ const ROW_COLUMNS: Column<TrackerRecord>[] = [
   { header: "Status", cell: (r) => <StatusBadge status={r.status} short /> },
   { header: "Poles", cell: (r) => formatNumber(r.poles), numeric: true },
   { header: "Hours", cell: (r) => formatNumber(r.hoursOnPermit), numeric: true },
-  { header: "Row", cell: (r) => <span className="text-fg-subtle">{r.excelRow}</span>, numeric: true },
+  { header: "Row", cell: (r) => <span className="whitespace-nowrap text-fg-subtle">{rowLabel(r)}</span>, numeric: true },
 ];

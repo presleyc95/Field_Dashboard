@@ -34,6 +34,12 @@ export function hitchRange(hitch: Hitch): string {
   return `${formatShort(hitch.start, crossesYear)} – ${formatShort(hitch.end, crossesYear)}`;
 }
 
+/** "2026 · 1157": which year's tracker and which row, since row numbers repeat across years. */
+export function rowLabel(row: { source: string; excelRow: number }): string {
+  const year = /(20\d\d)/.exec(row.source)?.[1];
+  return year ? `${year} · ${row.excelRow}` : String(row.excelRow);
+}
+
 export function formatTime(ms: number): string {
   return new Date(ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

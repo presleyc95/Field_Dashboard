@@ -9,6 +9,12 @@ import { excelSerialToISO, parseDateText } from "./dates";
 import type { HitchDates } from "./hitches";
 import type { ScopeItem } from "./types";
 
+/**
+ * Bump whenever readWorkbook's output changes: cached past-year workbooks (parsed once and kept
+ * in the browser) with an older version are parsed again.
+ */
+export const PARSER_VERSION = 2;
+
 export const TRACKER_SHEET = "TSG Field Tracker";
 export const HITCH_SHEET = "Validations";
 
@@ -38,6 +44,8 @@ const REQUIRED: TrackerField[] = ["opco", "permitId", "tech", "date", "task", "s
 export type RawTrackerRow = { excelRow: number } & Record<TrackerField, RawCell>;
 
 export type RawWorkbook = {
+  /** File name (e.g. "TSG Field Tracker - Master 2026.xlsx"). */
+  source?: string;
   rows: RawTrackerRow[];
   /** 0-based column index of each field (for writing back later). */
   columns: Partial<Record<TrackerField, number>>;
@@ -83,7 +91,14 @@ export class WorkbookError extends Error {}
 type DenseCell = { v?: unknown; w?: string; t?: string } | null | undefined;
 type DenseSheet = { "!data"?: DenseCell[][]; "!ref"?: string };
 
-export function readWorkbook(data: ArrayBuffer | Uint8Array, readSchedules = READ_FIELD_SCHEDULES): RawWorkbook {
+export type ReadOptions = {
+  /** File name, recorded on every row and issue so multi-year data says where it came from. */
+  source?: string;
+  readSchedules?: boolean;
+};
+
+export function readWorkbook(data: ArrayBuffer | Uint8Array, options: ReadOptions = {}): RawWorkbook {
+  const { source, readSchedules = READ_FIELD_SCHEDULES } = options;
   // Listing sheet names is cheap; it tells us which scope sheets to parse.
   const scopeSheets = readSchedules
     ? XLSX.read(data, { type: "array", bookSheets: true }).SheetNames.filter((n) => SCOPE_SHEETS.some((s) => s.match.test(n.trim())))
@@ -114,7 +129,7 @@ export function readWorkbook(data: ArrayBuffer | Uint8Array, readSchedules = REA
     return sheet ? readScope(sheet, name, opco) : [];
   });
 
-  return { rows, columns, headerRow, hitches, scope };
+  return { source, rows, columns, headerRow, hitches, scope };
 }
 
 function readScope(sheet: DenseSheet, name: string, opco: string): ScopeItem[] {
@@ -224,20 +239,23 @@ function readTracker(sheet: DenseSheet) {
   return { rows, columns, headerRow: origin + headerIndex + 1 };
 }
 
-/** Reads the "Hitch Start Dates" / "Hitch End Dates" columns, wherever they are. */
+/**
+ * Reads the "Hitch Start Dates" / "Hitch End Dates" columns, wherever they are. Older trackers
+ * (2025) only list start dates; their ends are filled in from the pattern later.
+ */
 function readHitchDates(sheet: DenseSheet): HitchDates[] {
   const data = sheet["!data"] ?? [];
   for (let r = 0; r < Math.min(data.length, 20); r++) {
     const headers = (data[r] ?? []).map(headerText);
     const startCol = headers.indexOf("hitch start dates");
     const endCol = headers.indexOf("hitch end dates");
-    if (startCol < 0 || endCol < 0) continue;
+    if (startCol < 0) continue;
 
     const hitches: HitchDates[] = [];
     for (let i = r + 1; i < data.length; i++) {
       const start = cellDate(data[i]?.[startCol]);
-      const end = cellDate(data[i]?.[endCol]);
-      if (start && end) hitches.push({ start, end });
+      const end = endCol >= 0 ? cellDate(data[i]?.[endCol]) : null;
+      if (start) hitches.push({ start, end });
     }
     return hitches;
   }
