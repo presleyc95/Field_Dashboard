@@ -69,6 +69,9 @@ const TASK_DROPDOWN = new Set([
 
 export const PRODUCTION_TASKS = ["KATAPULT", "PCI", "GO BACKS", "POWER PCI", "STAKING"] as const;
 
+/** Tasks whose photos the field admin uploads to Katapult (STAKING isn't uploaded). */
+export const UPLOAD_TASKS: readonly string[] = ["KATAPULT", "PCI", "GO BACKS", "POWER PCI"];
+
 export function cleanTask(cell: RawCell, row: number, log: IssueLog): string | null {
   const raw = tidyText(rawText(cell));
   if (!raw) {

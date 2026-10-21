@@ -1,6 +1,8 @@
 import { createHashRouter } from "react-router";
 import { CommandCenter } from "@/pages/CommandCenter";
+import { Permit } from "@/pages/Permit";
 import { Placeholder } from "@/pages/Placeholder";
+import { Search } from "@/pages/Search";
 import { Settings } from "@/pages/Settings";
 import { Layout } from "./Layout";
 
@@ -31,14 +33,8 @@ export const router = createHashRouter([
         path: "people/:name?",
         element: <Placeholder title="People" step={5} description="Tech profiles: most-worked OPCO, average poles per day, partners, task mix and trends." />,
       },
-      {
-        path: "permit/:id",
-        element: <Placeholder title="Permit" step={3} description="Every task, row, person and upload status for one permit." />,
-      },
-      {
-        path: "search",
-        element: <Placeholder title="Search" step={3} description="Search permits, people, OPCOs and notes. Ctrl+K opens it from anywhere." />,
-      },
+      { path: "permit/:id", element: <Permit /> },
+      { path: "search", element: <Search /> },
       {
         path: "queue",
         element: <Placeholder title="Upload Queue" step={7} description="Completed KATAPULT, PCI, GO BACKS and POWER PCI jobs not yet marked uploaded." />,

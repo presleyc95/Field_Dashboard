@@ -33,7 +33,7 @@ Status: planned, not built. Decisions below were settled on 2026-10-21.
 | Styling | Tailwind CSS, cyberpunk design tokens | The v0 template is Tailwind/shadcn. Exact colors and fonts come from the template's source code (it wouldn't render in a preview during planning). |
 | KPI cards and charts | Tremor copy-in components (built on Recharts), restyled with the theme | Tremor's density and structure, cyberpunk look |
 | Tables | TanStack Table + TanStack Virtual | Sorting, grouping, column pinning; 20k+ rows scroll smoothly |
-| Search | MiniSearch | Fuzzy search with prefixes and field filters (`opco:aep tech:smith`) |
+| Search | Own permit-ID matcher (no library) | Exact → starts with → contains → close spellings (typo distance), plus field filters (`opco:aep tech:smith`). A general text-search library split IDs into tiny pieces and missed close spellings. |
 | Reading the workbook | SheetJS, run in a Web Worker | Parsing a ~4 MB workbook doesn't freeze the page |
 | Writing the workbook | JSZip, editing cells in the sheet XML (see §8) | Every other part of the file stays byte-for-byte the same |
 | State | Zustand | Small and simple |
@@ -279,7 +279,7 @@ src/
     model.ts      records, permits, people, teams, hitches
     hitches.ts    hitch list, continuing the 14-day pattern
     umbrellas.ts  OPCO → umbrella config
-    search.ts     MiniSearch index, permit-ID matching
+    search.ts     permit-ID matching and ranking, people/OPCO/notes search
     metrics.ts    all calculations
   file/
     access.ts     folder handle, permission, change checks

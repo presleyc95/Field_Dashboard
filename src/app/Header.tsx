@@ -4,6 +4,7 @@ import { formatShort } from "@/data/dates";
 import { cn } from "@/lib/cn";
 import { hitchRange } from "@/lib/format";
 import { useHitchStatus } from "@/state/hooks";
+import { usePalette } from "@/state/search";
 import { useTracker } from "@/state/tracker";
 import { pageLabel } from "./nav";
 
@@ -14,6 +15,7 @@ export function Header() {
   const ready = useTracker((s) => s.phase === "ready");
   const refreshing = useTracker((s) => s.refreshing);
   const reload = useTracker((s) => s.reload);
+  const setPaletteOpen = usePalette((s) => s.setOpen);
 
   const hitchText = !status
     ? "—"
@@ -41,9 +43,12 @@ export function Header() {
           type="button"
           aria-label="Search (Ctrl+K)"
           title="Search (Ctrl+K)"
-          className="rounded p-1.5 text-fg-muted hover:bg-raised hover:text-accent"
+          onClick={() => setPaletteOpen(true)}
+          className="flex items-center gap-2 rounded border border-line px-2 py-1 text-fg-muted hover:border-accent hover:text-accent"
         >
-          <Search size={16} />
+          <Search size={14} />
+          <span className="hidden lg:inline">Search</span>
+          <kbd className="hidden text-[10px] text-fg-subtle lg:inline">CTRL K</kbd>
         </button>
         <button
           type="button"

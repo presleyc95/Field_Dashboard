@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
+import { CommandPalette, usePaletteShortcut } from "@/components/CommandPalette";
 import { useTrackerLifecycle } from "@/state/hooks";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -7,6 +8,7 @@ import { Sidebar } from "./Sidebar";
 export function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   useTrackerLifecycle();
+  usePaletteShortcut();
 
   return (
     <div className="flex h-full">
@@ -17,6 +19,7 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

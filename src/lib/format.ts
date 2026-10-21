@@ -7,6 +7,13 @@ export function formatInt(n: number): string {
   return integer.format(n);
 }
 
+const decimal = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+
+/** Up to two decimals, no trailing zeros (hours, miles). */
+export function formatNumber(n: number | null | undefined): string {
+  return n === null || n === undefined ? "—" : decimal.format(n);
+}
+
 /** `Oct 15 – Oct 22` (adds the year when the hitch crosses into a new one). */
 export function hitchRange(hitch: Hitch): string {
   const crossesYear = hitch.start.slice(0, 4) !== hitch.end.slice(0, 4);
