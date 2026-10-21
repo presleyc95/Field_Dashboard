@@ -1,0 +1,21 @@
+# Tracker data must never reach GitHub (ARCHITECTURE.md §1)
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+~$*
+.dashboard-backups/
+dashboard-log.json
+
+# Build and dependencies
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log

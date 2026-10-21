@@ -1,0 +1,43 @@
+/*
+ * Design tokens, taken from the v0 "Cyberpunk dashboard design" template (Tactical Ops):
+ * black canvas, neutral-900 panels, neutral-700 hairlines, orange-500 accent, Geist Mono throughout.
+ * Defined once here; Tailwind turns each --color-* into bg-*, text-*, border-* utilities.
+ * The app is dark-only by design (the template has no light theme).
+ */
+@theme {
+  --color-*: initial;
+
+  /* Surfaces */
+  --color-canvas: #000000;        /* page background */
+  --color-panel: #171717;         /* cards, sidebar (neutral-900) */
+  --color-raised: #262626;        /* rows inside cards, hover (neutral-800) */
+  --color-line: #404040;          /* borders, grid lines (neutral-700) */
+  --color-line-subtle: #262626;   /* dividers inside panels */
+
+  /* Text */
+  --color-fg: #ffffff;            /* values, headings */
+  --color-fg-soft: #d4d4d4;       /* body text (neutral-300) */
+  --color-fg-muted: #a3a3a3;      /* labels (neutral-400) */
+  --color-fg-subtle: #737373;     /* captions, axis text (neutral-500) */
+
+  /* Accent and status */
+  --color-accent: #f97316;        /* orange-500: active nav, highlights, primary series */
+  --color-accent-hover: #ea580c;  /* orange-600 */
+  --color-accent-fg: #ffffff;     /* text on accent */
+  --color-positive: #22c55e;      /* up vs. previous hitch */
+  --color-negative: #ef4444;      /* down vs. previous hitch, errors (red-500) */
+  --color-warning: #f59e0b;       /* needs attention */
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-black: #000000;
+  --color-white: #ffffff;
+
+  /* Type: Geist Mono for everything, like the template */
+  --font-sans: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+}
