@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
+import { useTrackerLifecycle } from "@/state/hooks";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
 export function Layout() {
   const [collapsed, setCollapsed] = useState(false);
+  useTrackerLifecycle();
 
   return (
     <div className="flex h-full">

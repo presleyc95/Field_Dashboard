@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router";
 import { cn } from "@/lib/cn";
+import { formatInt } from "@/lib/format";
+import { type Phase, useTracker } from "@/state/tracker";
 import { NAV_ITEMS } from "./nav";
 
 type SidebarProps = {
@@ -56,18 +58,53 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {!collapsed && (
-        <div className="m-3 rounded border border-line bg-raised/60 p-3 text-xs">
-          <div className="flex items-center gap-2 font-medium uppercase tracking-wider text-fg">
-            <span className="size-2 rounded-full bg-fg-subtle" aria-hidden />
-            No file connected
-          </div>
-          <div className="mt-2 space-y-0.5 text-fg-subtle">
-            <div>TRACKER: —</div>
-            <div>MODE: VIEW ONLY</div>
-          </div>
-        </div>
-      )}
+      {!collapsed && <ConnectionStatus />}
     </aside>
+  );
+}
+
+const STATUS_TEXT: Record<Phase, string> = {
+  starting: "Starting",
+  unsupported: "Use Chrome or Edge",
+  "needs-folder": "No tracker connected",
+  "needs-permission": "Access needed",
+  "choose-file": "Choose workbook",
+  loading: "Loading",
+  ready: "Tracker connected",
+  error: "Load failed",
+};
+
+function ConnectionStatus() {
+  const phase = useTracker((s) => s.phase);
+  const fileName = useTracker((s) => s.fileName);
+  const rows = useTracker((s) => s.dataset?.records.length);
+  const refreshing = useTracker((s) => s.refreshing);
+
+  const dot =
+    phase === "ready"
+      ? "bg-positive"
+      : phase === "error" || phase === "unsupported"
+        ? "bg-negative"
+        : phase === "loading" || phase === "starting"
+          ? "bg-accent animate-pulse"
+          : "bg-warning";
+
+  return (
+    <NavLink
+      to="/settings"
+      className="m-3 block rounded border border-line bg-raised/60 p-3 text-xs hover:border-accent"
+    >
+      <div className="flex items-center gap-2 font-medium uppercase tracking-wider text-fg">
+        <span className={cn("size-2 shrink-0 rounded-full", refreshing ? "bg-accent animate-pulse" : dot)} aria-hidden />
+        {refreshing ? "Reloading" : STATUS_TEXT[phase]}
+      </div>
+      <div className="mt-2 space-y-0.5 uppercase text-fg-subtle">
+        <div className="truncate" title={fileName ?? undefined}>
+          Tracker: {fileName ? fileName.replace(/\.xlsx$/i, "") : "—"}
+        </div>
+        <div>Rows: {rows !== undefined ? formatInt(rows) : "—"}</div>
+        <div>Mode: view only</div>
+      </div>
+    </NavLink>
   );
 }

@@ -1,6 +1,7 @@
 import { createHashRouter } from "react-router";
 import { CommandCenter } from "@/pages/CommandCenter";
 import { Placeholder } from "@/pages/Placeholder";
+import { Settings } from "@/pages/Settings";
 import { Layout } from "./Layout";
 
 // Hash routes (#/permit/...) because GitHub Pages can't route paths on the server.
@@ -46,10 +47,7 @@ export const router = createHashRouter([
         path: "quality",
         element: <Placeholder title="Data Quality" step={6} description="Everything the clean-up fixed or flagged, with Excel row numbers." />,
       },
-      {
-        path: "settings",
-        element: <Placeholder title="Settings" step={2} description="Folder connection, who you are, pins and edit mode." />,
-      },
+      { path: "settings", element: <Settings /> },
       {
         path: "*",
         element: <Placeholder title="Not found" step={1} description="That page doesn't exist." />,
