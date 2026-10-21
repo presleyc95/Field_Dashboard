@@ -104,6 +104,31 @@ export type Opco = {
   recordCount: number;
 };
 
+/**
+ * One row of a field-queue sheet (RM# CNP, Entergy schedules): work received and waiting to be
+ * fielded. These sheets are a snapshot of what's waiting now, not a history.
+ */
+export type ScopeItem = {
+  sheet: string;
+  /** OPCO the queue belongs to, as spelled in the tracker. */
+  opco: string;
+  /** Circuit, work order description or permit, as written. */
+  key: string;
+  /** Comparison key, same rules as Permit IDs. */
+  permitKey: string;
+  status: string | null;
+  poles: number | null;
+  goBackPoles: number | null;
+  city: string | null;
+  state: string | null;
+  priority: string | null;
+  workOrder: string | null;
+  received: ISODate | null;
+  due: ISODate | null;
+  /** 1-based row on its sheet. */
+  excelRow: number;
+};
+
 export type Dataset = {
   records: TrackerRecord[];
   issues: DataIssue[];
@@ -112,6 +137,8 @@ export type Dataset = {
   people: Person[];
   teams: Team[];
   opcos: Opco[];
+  /** Field-queue rows from the scope sheets. */
+  scope: ScopeItem[];
   /** Latest work date in the tracker. */
   dataThrough: ISODate | null;
   /** The date `buildDataset` treated as today. */

@@ -71,10 +71,13 @@ Table1.
 Column C `Hitch Start Dates` and column E `Hitch End Dates`. Each hitch runs 8 days (Thursday to Thursday) and a
 new one starts every 14 days. About 94% of logged rows fall inside a hitch, so everyone is on one rotation.
 
-### Scope sheets
+### Field schedules (not used for now)
 `RM1 CNP`, `RM4 CNP`, `RM16 CNP` (Circuit, Status, Pole Count, Field Priority, Received Date, Field Due Date) and
-`Entergy Eng Field Schedule` / `EntergyJU Field Schedule`. These list work waiting to be fielded, and give
-remaining poles and due dates for forecasts. CNP circuit codes match Permit IDs where a circuit has been worked.
+`Entergy Eng Field Schedule` / `EntergyJU Field Schedule` list work waiting to be fielded (a snapshot, no history).
+**Decided 2026-10-21: the data isn't polished enough to use yet**, so the dashboard doesn't read them. The reader,
+circuit-to-permit matching and queue-vs-pace math are kept behind `READ_FIELD_SCHEDULES` in `src/data/parse.ts`
+(off) with tests, so the field queue can come back to the Projects pages later. Everything below that mentions
+scope, burn-down or due dates is deferred.
 
 ### What's in the file that a save must not damage
 Power Query connections and query tables, 2 pivot tables and their cache, a chart, `calcChain.xml`, an add-in
@@ -156,10 +159,10 @@ Any OPCO not listed shows under its own name.
 
 | Page | Route | Contents |
 |---|---|---|
-| **Command center** | `#/` | Current-hitch banner (day X of 8, data-through date); KPI cards (poles this hitch vs. last, poles per tech per day, active teams, upload backlog, off-hitch rows); production trend; team leaderboard; alerts (stalled permits, due-date risk, data-quality count) |
+| **Command center** | `#/` | Current-hitch banner (day X of 8, data-through date); KPI cards (poles this hitch vs. last, poles per tech per day, active teams, upload backlog, off-hitch rows); production trend; team leaderboard; alerts (stalled permits, data-quality count) |
 | **Hitches** | `#/hitches` | Hitch schedule timeline; pick any hitch to see its totals, teams and who was paired with whom |
 | **Production** | `#/production` | By OPCO / umbrella / team / person / task / hitch, with drill-down into the rows behind each number |
-| **Projects** | `#/projects`, `#/projects/:opco` | Progress per OPCO; burn-down against the scope sheets; projected finish date at the current pace; due-date risk |
+| **Projects** | `#/projects`, `#/projects/:opco` | Every OPCO and umbrella: poles this hitch, pace (last 4 hitches), permits by status, task mix, top teams. (Field queue, projected finish and due-date risk deferred with the field schedules.) |
 | **Teams** | `#/teams` | Current pairs as cards, team totals for the hitch, pinned teams first |
 | **People** | `#/people`, `#/people/:name` | Profile: most-worked OPCO, average poles per day, days worked, best hitch, consistency, solo/logger/partner split, most frequent partners, task mix, trend over hitches |
 | **Permit** | `#/permit/:id` | Full permit detail (§6.1) |
@@ -186,7 +189,7 @@ last field date, overall status and total poles. Every permit has a shareable li
    287.)
 4. **All rows table:** every column plus the Excel row number. In edit mode, uploads can be marked from here into
    the pending-changes tray.
-5. **Scope link:** when the permit matches a CNP circuit: scoped pole count, field priority, due date, percent
+5. **Scope link (deferred with the field schedules):** when the permit matches a CNP circuit: scoped pole count, field priority, due date, percent
    collected, days until due.
 6. **Data-quality flags:** spelling variants, more than one OPCO (44 permits), possible duplicate rows, In Progress
    with no later completion.
@@ -207,7 +210,7 @@ Clicking through goes to the people, the OPCO, or any hitch the permit was worke
 - Production by hitch day (whether output drops on days 6–8).
 - Task mix per person and per OPCO; off-hitch work.
 - Upload backlog by age (field date until marked uploaded).
-- OPCO burn-down against the scope sheets; projected finish dates; permits at risk of missing field due dates.
+- *(Deferred with the field schedules:)* OPCO field queue vs. pace, projected finish dates, due-date risk.
 - Stalled permits (In Progress with no row for more than one hitch).
 
 ---
@@ -301,7 +304,7 @@ tests/            clean-up, hitch logic, metrics, write-back file comparison
 2. Folder access, parse in the background, clean-up, data model, hitch logic, plus tests against the real workbook.
 3. Search and the permit detail page.
 4. Command center, Hitches, Production.
-5. People, Teams, Projects (with the scope sheets).
+5. People, Teams, Projects (field schedules deferred).
 6. Data quality page.
 7. Upload queue and write-back, with the file-comparison test and an Excel check on a copy of the tracker.
 8. Roles (write check, View only badge), "I am…", pins.

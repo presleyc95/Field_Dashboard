@@ -4,9 +4,10 @@
  * Only the sheets the dashboard needs are parsed.
  */
 import * as XLSX from "xlsx";
-import type { RawCell } from "./clean";
+import { permitKey, type RawCell, tidyText } from "./clean";
 import { excelSerialToISO, parseDateText } from "./dates";
 import type { HitchDates } from "./hitches";
+import type { ScopeItem } from "./types";
 
 export const TRACKER_SHEET = "TSG Field Tracker";
 export const HITCH_SHEET = "Validations";
@@ -42,6 +43,39 @@ export type RawWorkbook = {
   columns: Partial<Record<TrackerField, number>>;
   headerRow: number;
   hitches: HitchDates[];
+  /** Field-queue rows; optional so older callers and tests can leave it out. */
+  scope?: ScopeItem[];
+};
+
+/**
+ * The field schedules (RM# CNP, Entergy) aren't reliable enough to use yet, so they're not read.
+ * Set this to true to bring the field queue back on the Projects pages; the parsing, matching
+ * and pace math below are kept and tested for that.
+ */
+export const READ_FIELD_SCHEDULES = false;
+
+/**
+ * Field-queue sheets and the tracker OPCO each one belongs to. Sheets are matched by name, so a
+ * new "RM20 CNP" sheet is picked up without a code change.
+ */
+const SCOPE_SHEETS: { match: RegExp; opco: string }[] = [
+  { match: /^RM\s*\d+\s*CNP$/i, opco: "CenterPoint" },
+  { match: /^Entergy\s*Eng.*Schedule$/i, opco: "ENTERGY" },
+  { match: /^EntergyJU.*Schedule$/i, opco: "ENTERGY" },
+];
+
+/** Scope-sheet columns, by header text (lowercase, spaces removed). */
+const SCOPE_COLUMNS: Record<Exclude<keyof ScopeItem, "sheet" | "opco" | "permitKey" | "excelRow">, string[]> = {
+  key: ["circuit", "wodescription", "permit"],
+  status: ["status"],
+  poles: ["polecount", "count"],
+  goBackPoles: ["gobackpolecount"],
+  city: ["city"],
+  state: ["state"],
+  priority: ["fieldpriority", "priority"],
+  workOrder: ["billto-workorder", "workorder"],
+  received: ["receiveddate", "datereceivedwork"],
+  due: ["fieldduedate", "duedate"],
 };
 
 export class WorkbookError extends Error {}
@@ -49,11 +83,16 @@ export class WorkbookError extends Error {}
 type DenseCell = { v?: unknown; w?: string; t?: string } | null | undefined;
 type DenseSheet = { "!data"?: DenseCell[][]; "!ref"?: string };
 
-export function readWorkbook(data: ArrayBuffer | Uint8Array): RawWorkbook {
+export function readWorkbook(data: ArrayBuffer | Uint8Array, readSchedules = READ_FIELD_SCHEDULES): RawWorkbook {
+  // Listing sheet names is cheap; it tells us which scope sheets to parse.
+  const scopeSheets = readSchedules
+    ? XLSX.read(data, { type: "array", bookSheets: true }).SheetNames.filter((n) => SCOPE_SHEETS.some((s) => s.match.test(n.trim())))
+    : [];
+
   const wb = XLSX.read(data, {
     type: "array",
     dense: true,
-    sheets: [TRACKER_SHEET, HITCH_SHEET],
+    sheets: [TRACKER_SHEET, HITCH_SHEET, ...scopeSheets],
     cellFormula: false,
     cellHTML: false,
     cellStyles: false,
@@ -69,7 +108,76 @@ export function readWorkbook(data: ArrayBuffer | Uint8Array): RawWorkbook {
   const hitchSheet = wb.Sheets[HITCH_SHEET] as DenseSheet | undefined;
   const hitches = hitchSheet ? readHitchDates(hitchSheet) : [];
 
-  return { rows, columns, headerRow, hitches };
+  const scope = scopeSheets.flatMap((name) => {
+    const sheet = wb.Sheets[name] as DenseSheet | undefined;
+    const opco = SCOPE_SHEETS.find((s) => s.match.test(name.trim()))!.opco;
+    return sheet ? readScope(sheet, name, opco) : [];
+  });
+
+  return { rows, columns, headerRow, hitches, scope };
+}
+
+function readScope(sheet: DenseSheet, name: string, opco: string): ScopeItem[] {
+  const data = sheet["!data"] ?? [];
+  const origin = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]).s.r : 0;
+  const squash = (cell: DenseCell) => headerText(cell).replace(/\s+/g, "");
+
+  const headerIndex = data.slice(0, 20).findIndex((row) => {
+    const h = (row ?? []).map(squash);
+    return h.includes("status") && SCOPE_COLUMNS.key.some((k) => h.includes(k));
+  });
+  if (headerIndex < 0) return [];
+
+  const headers = (data[headerIndex] ?? []).map(squash);
+  // First matching header wins, so a summary block further right (e.g. a second "State") is ignored.
+  const col = (aliases: string[]) => {
+    for (const alias of aliases) {
+      const i = headers.indexOf(alias);
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const at = (row: DenseCell[], aliases: string[]) => {
+    const i = col(aliases);
+    return i >= 0 ? row[i] : undefined;
+  };
+
+  const items: ScopeItem[] = [];
+  for (let r = headerIndex + 1; r < data.length; r++) {
+    const row = data[r] ?? [];
+    const keyCell = at(row, SCOPE_COLUMNS.key);
+    const key = keyCell && hasValue(keyCell) ? tidyText(String(keyCell.w ?? keyCell.v)) : "";
+    if (!key) continue;
+    items.push({
+      sheet: name,
+      opco,
+      key,
+      permitKey: permitKey(key),
+      status: textOf(at(row, SCOPE_COLUMNS.status)),
+      poles: numberOf(at(row, SCOPE_COLUMNS.poles)),
+      goBackPoles: numberOf(at(row, SCOPE_COLUMNS.goBackPoles)),
+      city: textOf(at(row, SCOPE_COLUMNS.city)),
+      state: textOf(at(row, SCOPE_COLUMNS.state)),
+      priority: textOf(at(row, SCOPE_COLUMNS.priority)),
+      workOrder: textOf(at(row, SCOPE_COLUMNS.workOrder)),
+      received: cellDate(at(row, SCOPE_COLUMNS.received)),
+      due: cellDate(at(row, SCOPE_COLUMNS.due)),
+      excelRow: origin + r + 1,
+    });
+  }
+  return items;
+}
+
+function textOf(cell: DenseCell): string | null {
+  if (!hasValue(cell)) return null;
+  const text = tidyText(String(cell!.w ?? cell!.v));
+  return text || null;
+}
+
+function numberOf(cell: DenseCell): number | null {
+  if (!hasValue(cell)) return null;
+  const n = typeof cell!.v === "number" ? cell!.v : Number(String(cell!.v).replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
 }
 
 function readTracker(sheet: DenseSheet) {

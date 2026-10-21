@@ -127,6 +127,8 @@ export function buildDataset(raw: RawWorkbook, today: ISODate): Dataset {
     people: buildPeople(records),
     teams: buildTeams(records),
     opcos: buildOpcos(records, opcoSpelling),
+    // Scope sheets name the OPCO their own way; use the tracker's spelling when it has one.
+    scope: (raw.scope ?? []).map((item) => ({ ...item, opco: opcoSpelling.pick(item.opco) })),
     dataThrough,
     today,
   };

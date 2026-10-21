@@ -1,6 +1,11 @@
 import { createHashRouter } from "react-router";
 import { CommandCenter } from "@/pages/CommandCenter";
 import { Hitches } from "@/pages/Hitches";
+import { People } from "@/pages/People";
+import { PersonProfile } from "@/pages/PersonProfile";
+import { ProjectDetail } from "@/pages/ProjectDetail";
+import { Projects } from "@/pages/Projects";
+import { Teams } from "@/pages/Teams";
 import { Production } from "@/pages/Production";
 import { Permit } from "@/pages/Permit";
 import { Placeholder } from "@/pages/Placeholder";
@@ -19,18 +24,12 @@ export const router = createHashRouter([
       { index: true, element: <CommandCenter /> },
       { path: "hitches", element: <Hitches /> },
       { path: "production", element: <Production /> },
-      {
-        path: "projects/:opco?",
-        element: <Placeholder title="Projects" step={5} description="Progress per OPCO, burn-down against the scope sheets, projected finish and due-date risk." />,
-      },
-      {
-        path: "teams",
-        element: <Placeholder title="Teams" step={5} description="Current pairs and team totals for the selected hitch." />,
-      },
-      {
-        path: "people/:name?",
-        element: <Placeholder title="People" step={5} description="Tech profiles: most-worked OPCO, average poles per day, partners, task mix and trends." />,
-      },
+      { path: "projects", element: <Projects /> },
+      { path: "projects/umbrella/:opco", element: <ProjectDetail umbrella /> },
+      { path: "projects/:opco", element: <ProjectDetail /> },
+      { path: "teams", element: <Teams /> },
+      { path: "people", element: <People /> },
+      { path: "people/:name", element: <PersonProfile /> },
       { path: "permit/:id", element: <Permit /> },
       { path: "search", element: <Search /> },
       {
