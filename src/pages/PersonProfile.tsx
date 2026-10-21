@@ -12,7 +12,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { type Column, Table } from "@/components/Table";
 import { formatShort } from "@/data/dates";
 import { buildProfile } from "@/data/people";
-import type { TrackerRecord } from "@/data/types";
+import { type PersonDay, personDays } from "@/data/reports";
+import type { Dataset, TrackerRecord } from "@/data/types";
 import { formatInt, formatNumber, formatRate, hitchRange } from "@/lib/format";
 import { useTracker } from "@/state/tracker";
 
@@ -160,8 +161,10 @@ export function PersonProfile() {
         </Panel>
       </div>
 
+      <ByDay dataset={dataset} name={p.person.name} records={p.records} />
+
       <Panel title={`Rows · ${formatInt(recent.length)}`} actions={<span className="text-xs text-fg-subtle">Newest first</span>}>
-        <Table columns={rowColumns(p.person.name)} rows={recent.slice(0, limit)} rowKey={(r) => r.id} />
+        <Table columns={rowColumns(p.person.name)} rows={recent.slice(0, limit)} exportRows={recent} rowKey={(r) => r.id} exportName={`${p.person.name} rows`} />
         {recent.length > limit && (
           <button
             type="button"
@@ -176,9 +179,119 @@ export function PersonProfile() {
   );
 }
 
+const DAYS_PAGE = 30;
+
+/** Their production day by day, for one hitch or every day they worked. */
+function ByDay({ dataset, name, records }: { dataset: Dataset; name: string; records: TrackerRecord[] }) {
+  const days = useMemo(() => personDays(records, name), [records, name]);
+  const hitchIds = useMemo(() => [...new Set(days.map((d) => d.hitchId).filter((id): id is number => id !== null))], [days]);
+  const [hitch, setHitch] = useState("all");
+  const [limit, setLimit] = useState(DAYS_PAGE);
+  const shown = hitch === "all" ? days : days.filter((d) => String(d.hitchId) === hitch);
+  const chart = shown.slice(0, 30).reverse();
+
+  return (
+    <Panel
+      title={`Production by day · ${formatInt(shown.length)} days`}
+      actions={
+        <select
+          value={hitch}
+          onChange={(e) => {
+            setHitch(e.target.value);
+            setLimit(DAYS_PAGE);
+          }}
+          aria-label="Hitch"
+          className="h-8 rounded border border-line bg-canvas px-2 text-xs text-fg focus:border-accent"
+        >
+          <option value="all">All days</option>
+          {hitchIds.map((id) => (
+            <option key={id} value={id}>
+              Hitch {hitchRange(dataset.hitches[id]!)}
+            </option>
+          ))}
+        </select>
+      }
+    >
+      <ColumnChart
+        valueLabel="Poles"
+        height={160}
+        data={chart.map((d) => ({
+          key: d.date,
+          label: formatShort(d.date),
+          value: d.poles,
+          note: [d.partners.length ? `with ${d.partners.join(", ")}` : "solo", d.opcos.join(", ")].filter(Boolean).join(" · "),
+        }))}
+      />
+      {hitch === "all" && shown.length > 30 && <p className="mt-2 text-xs text-fg-subtle">Chart shows the last 30 days worked.</p>}
+      <div className="mt-4">
+        <Table columns={DAY_COLUMNS} rows={shown.slice(0, limit)} exportRows={shown} rowKey={(d) => d.date} exportName={`${name} by day`} />
+      </div>
+      {shown.length > limit && (
+        <button
+          type="button"
+          onClick={() => setLimit((l) => l + DAYS_PAGE)}
+          className="mt-3 w-full rounded border border-line py-2 text-xs uppercase tracking-wider text-fg-muted hover:border-accent hover:text-accent"
+        >
+          Show {Math.min(DAYS_PAGE, shown.length - limit)} more
+        </button>
+      )}
+    </Panel>
+  );
+}
+
+const DAY_COLUMNS: Column<PersonDay>[] = [
+  { header: "Date", cell: (d) => formatShort(d.date, true), exportValue: (d) => d.date, className: "whitespace-nowrap" },
+  { header: "Hitch day", cell: (d) => (d.hitchDay ? `D${d.hitchDay}` : <span className="text-fg-subtle">Off</span>), exportValue: (d) => d.hitchDay },
+  {
+    header: "With",
+    cell: (d) =>
+      d.partners.length ? (
+        <span className="whitespace-nowrap">
+          {d.partners.map((x, i) => (
+            <span key={x}>
+              {i > 0 && ", "}
+              <Link to={personPath(x)} className="text-fg-soft hover:text-accent">
+                {x}
+              </Link>
+            </span>
+          ))}
+        </span>
+      ) : (
+        <span className="text-fg-subtle">Solo</span>
+      ),
+  },
+  { header: "OPCO", cell: (d) => d.opcos.join(", ") || "—" },
+  {
+    header: "Permits",
+    cell: (d) =>
+      d.permits.length ? (
+        <span title={d.permits.join(", ")}>
+          {d.permits.slice(0, 2).map((id, i) => (
+            <span key={id}>
+              {i > 0 && ", "}
+              <Link to={permitPath(id)} className="text-fg hover:text-accent">
+                {id}
+              </Link>
+            </span>
+          ))}
+          {d.permits.length > 2 && <span className="text-fg-subtle"> +{d.permits.length - 2} more</span>}
+        </span>
+      ) : (
+        "—"
+      ),
+    exportValue: (d) => d.permits.join(", "),
+    className: "max-w-xs",
+  },
+  { header: "Tasks", cell: (d) => d.tasks.join(", ") || "—" },
+  { header: "Poles", cell: (d) => (d.production ? formatInt(d.poles) : <span className="text-fg-subtle">—</span>), exportValue: (d) => d.poles, numeric: true },
+  { header: "Hours", cell: (d) => formatNumber(Math.round(d.permitHours * 10) / 10), numeric: true },
+  { header: "Drive", cell: (d) => formatNumber(Math.round(d.driveHours * 10) / 10), numeric: true },
+  { header: "Miles", cell: (d) => formatInt(Math.round(d.mileage)), numeric: true },
+];
+
 function rowColumns(name: string): Column<TrackerRecord>[] {
   return [
-    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), className: "whitespace-nowrap" },
+    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), exportValue: (r) => r.date, className: "whitespace-nowrap" },
     {
       header: "Permit",
       cell: (r) =>

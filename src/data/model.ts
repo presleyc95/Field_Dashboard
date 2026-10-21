@@ -121,6 +121,7 @@ export function buildDataset(input: RawWorkbook | RawWorkbook[], today: ISODate)
       mileage: cleanNumber(row.mileage, "Mileage", r, log),
       notes: cleanNotes(row.notes),
       uploaded: cleanUploaded(row.uploaded),
+      jobComplete: false,
     };
   });
 
@@ -161,6 +162,7 @@ export function buildDataset(input: RawWorkbook | RawWorkbook[], today: ISODate)
   }
 
   flagDuplicates(records, log);
+  markCompleteJobs(records);
 
   const sources: SourceInfo[] = raws.map((raw, i) => {
     const name = sourceName(raw, i);
@@ -246,6 +248,27 @@ function flagDuplicates(records: TrackerRecord[], log: IssueLog) {
     const message = `${rec.tech} and ${rec.partner} both logged this permit on ${rec.date} (rows ${first.excelRow} and ${second.excelRow}); poles may be counted twice`;
     log.add(first.excelRow, "Permit ID", "flag", "possible-duplicate", message, first.permitId, first.source);
     log.add(second.excelRow, "Permit ID", "flag", "possible-duplicate", message, second.permitId, second.source);
+  }
+}
+
+/**
+ * A job is one permit + task, often logged over several days as In Progress and then Complete.
+ * The job's latest row with a known status decides whether it's finished. A job marked Complete
+ * and then worked again (In Progress on a later day) isn't finished.
+ */
+function markCompleteJobs(records: TrackerRecord[]) {
+  const latest = new Map<string, TrackerRecord>();
+  const jobOf = (r: TrackerRecord) => (r.permitKey ? `${r.permitKey}|${r.task ?? ""}` : null);
+  for (const rec of records) {
+    const job = jobOf(rec);
+    if (!job || rec.status === "Unknown") continue;
+    const prev = latest.get(job);
+    // Undated rows count as earliest; same-day rows go by order in the tracker (records are in file order).
+    if (!prev || (rec.date ?? "") >= (prev.date ?? "")) latest.set(job, rec);
+  }
+  for (const rec of records) {
+    const job = jobOf(rec);
+    rec.jobComplete = job ? latest.get(job)?.status === "Complete" : rec.status === "Complete";
   }
 }
 

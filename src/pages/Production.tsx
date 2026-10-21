@@ -162,6 +162,7 @@ export function Production() {
           rowKey={(g) => g.key}
           onRowClick={(g) => update({ g: g.key === selected ? null : g.key })}
           rowClassName={(g) => (g.key === selected ? "bg-accent/10" : undefined)}
+          exportName={`Production by ${by} ${scope.label}`}
         />
       </Panel>
     </div>
@@ -252,7 +253,7 @@ function RowsPanel({ dataset, group, onClose }: { dataset: Dataset; group: Group
         </button>
       }
     >
-      <Table columns={ROW_COLUMNS} rows={rows.slice(0, limit)} rowKey={(r) => r.id} />
+      <Table columns={ROW_COLUMNS} rows={rows.slice(0, limit)} exportRows={rows} rowKey={(r) => r.id} exportName="Production rows" />
       {rows.length > limit && (
         <button
           type="button"
@@ -267,7 +268,7 @@ function RowsPanel({ dataset, group, onClose }: { dataset: Dataset; group: Group
 }
 
 const ROW_COLUMNS: Column<TrackerRecord>[] = [
-  { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), className: "whitespace-nowrap" },
+  { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), exportValue: (r) => r.date, className: "whitespace-nowrap" },
   {
     header: "Permit",
     cell: (r) =>

@@ -23,7 +23,7 @@ export type TaskSummary = {
   people: string[];
   /** Whether this task's photos go to Katapult. */
   uploadable: boolean;
-  /** Completed rows marked uploaded / completed rows (uploadable tasks, current year's rows only). */
+  /** Completed rows marked uploaded / completed rows of finished jobs (uploadable tasks, current year's rows only). */
   uploadsDone: number;
   uploadsTotal: number;
   recordIds: number[];
@@ -117,7 +117,7 @@ function summarizeTasks(records: TrackerRecord[]): TaskSummary[] {
     const known = rows.filter((r) => r.status !== "Unknown");
     const uploadable = UPLOAD_TASKS.includes(task);
     // Uploads count from the current year only: past trackers rarely used Uploaded to Katapult.
-    const completed = rows.filter((r) => r.status === "Complete" && r.editable);
+    const completed = rows.filter((r) => r.status === "Complete" && r.jobComplete && r.editable);
     const dates = rows.map((r) => r.date).filter((d): d is ISODate => !!d);
     return {
       task,

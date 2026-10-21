@@ -8,8 +8,10 @@
  *   GO BACKS, POWER PCI, STAKING); drive time and coordination days don't count.
  * - **Poles per tech-day** = credited poles ÷ tech-days. For a pair it's the team's daily
  *   output; for someone solo, their own.
- * - **Upload backlog** = Complete rows of KATAPULT, PCI, GO BACKS or POWER PCI not marked
- *   uploaded, in the current year's workbook (the upload queue rule).
+ * - **Upload backlog** = Complete rows of finished KATAPULT, PCI, GO BACKS or POWER PCI jobs
+ *   (permit + task whose latest row is Complete) not marked uploaded, in the current year's
+ *   workbook (the upload queue rule). The field admin marks the Complete row, not the job's
+ *   earlier In Progress days.
  */
 import { PRODUCTION_TASKS, UPLOAD_TASKS } from "./clean";
 import { addDays, dayNumber, daysBetween } from "./dates";
@@ -22,11 +24,12 @@ export function isProduction(r: TrackerRecord): boolean {
 }
 
 /**
- * In the upload queue: only rows from the current year's workbook (past years didn't use the
- * Uploaded to Katapult column consistently, and the app never saves to them).
+ * In the upload queue: the Complete row of a finished job (see `jobComplete`), and only from the
+ * current year's workbook (past years didn't use the Uploaded to Katapult column consistently,
+ * and the app never saves to them).
  */
 export function awaitingUpload(r: TrackerRecord): boolean {
-  return r.editable && r.status === "Complete" && !!r.task && UPLOAD_TASKS.includes(r.task) && !r.uploaded;
+  return r.editable && r.status === "Complete" && r.jobComplete && !!r.task && UPLOAD_TASKS.includes(r.task) && !r.uploaded;
 }
 
 /** Names on a row: the logger and their partner. */

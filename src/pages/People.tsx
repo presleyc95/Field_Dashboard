@@ -70,7 +70,7 @@ export function People() {
         </div>
       }
     >
-      <Table columns={COLUMNS} rows={rows} rowKey={(p) => p.name} onRowClick={(p) => navigate(personPath(p.name))} empty="No one matches" />
+      <Table columns={COLUMNS} rows={rows} rowKey={(p) => p.name} onRowClick={(p) => navigate(personPath(p.name))} empty="No one matches" exportName="People" />
     </Panel>
   );
 }
@@ -102,5 +102,5 @@ const COLUMNS: Column<PersonRow>[] = [
         "—"
       ),
   },
-  { header: "Last worked", cell: (p) => (p.lastDate ? formatShort(p.lastDate, true) : "—"), className: "whitespace-nowrap" },
+  { header: "Last worked", cell: (p) => (p.lastDate ? formatShort(p.lastDate, true) : "—"), exportValue: (p) => p.lastDate, className: "whitespace-nowrap" },
 ];

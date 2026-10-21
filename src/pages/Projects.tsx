@@ -79,7 +79,7 @@ export function Projects() {
           </span>
         }
       >
-        <Table columns={COLUMNS} rows={rows} rowKey={(r) => r.project.name} onRowClick={(r) => navigate(opcoPath(r.project.name))} />
+        <Table columns={COLUMNS} rows={rows} rowKey={(r) => r.project.name} onRowClick={(r) => navigate(opcoPath(r.project.name))} exportName="Projects" />
       </Panel>
     </div>
   );
@@ -109,5 +109,5 @@ const COLUMNS: Column<ProjectListRow>[] = [
   { header: "Pace / hitch", cell: (r) => formatInt(r.pace), numeric: true },
   { header: "All poles", cell: (r) => formatInt(r.poles), numeric: true },
   { header: "Permits", cell: (r) => formatInt(r.permits), numeric: true },
-  { header: "Last worked", cell: (r) => (r.lastWorked ? formatShort(r.lastWorked, true) : "—"), className: "whitespace-nowrap" },
+  { header: "Last worked", cell: (r) => (r.lastWorked ? formatShort(r.lastWorked, true) : "—"), exportValue: (r) => r.lastWorked, className: "whitespace-nowrap" },
 ];

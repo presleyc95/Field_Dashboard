@@ -196,7 +196,7 @@ export function ProjectDetail({ umbrella = false }: { umbrella?: boolean }) {
               : ""}{" "}
             "In tracker" shows poles already logged under the same circuit or work order.
           </p>
-          <Table columns={SCOPE_COLUMNS} rows={s.scope} rowKey={(r) => `${r.sheet}:${r.excelRow}`} />
+          <Table columns={SCOPE_COLUMNS} rows={s.scope} rowKey={(r) => `${r.sheet}:${r.excelRow}`} exportName="Field queue" />
         </Panel>
       )}
 

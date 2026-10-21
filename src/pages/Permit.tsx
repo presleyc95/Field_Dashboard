@@ -152,6 +152,7 @@ export function Permit() {
           rows={s.records}
           rowKey={(r) => r.id}
           rowClassName={(r) => (pending[markKey(r)] ? "bg-accent/10" : undefined)}
+          exportName={`Permit ${s.permit.id}`}
         />
       </Panel>
     </div>
@@ -279,7 +280,7 @@ function Person({ name }: { name: string | null }) {
 function rowColumns(dataset: Dataset): Column<TrackerRecord>[] {
   return [
     { header: "Row", cell: (r) => <span className="whitespace-nowrap text-fg-subtle">{rowLabel(r)}</span>, numeric: true },
-    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), className: "whitespace-nowrap" },
+    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), exportValue: (r) => r.date, className: "whitespace-nowrap" },
     {
       header: "Hitch",
       cell: (r) => {
@@ -310,6 +311,7 @@ function rowColumns(dataset: Dataset): Column<TrackerRecord>[] {
 function markColumn(pending: Record<string, PendingMark>, toggle: (r: TrackerRecord) => void): Column<TrackerRecord> {
   return {
     header: "Mark",
+    noExport: true,
     cell: (r) =>
       awaitingUpload(r) ? (
         <input

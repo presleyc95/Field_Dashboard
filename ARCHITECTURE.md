@@ -191,16 +191,19 @@ Any OPCO not listed shows under its own name.
 | Page | Route | Contents |
 |---|---|---|
 | **Command center** | `#/` | Current-hitch banner (day X of 8, data-through date); KPI cards (poles this hitch vs. last, poles per tech per day, active teams, upload backlog, off-hitch rows); production trend; team leaderboard; alerts (stalled permits, data-quality count) |
-| **Hitches** | `#/hitches` | Hitch schedule timeline; pick any hitch to see its totals, teams and who was paired with whom |
+| **Daily report** | `#/daily`, `#/daily?d=YYYY-MM-DD` | One day's production (opens on yesterday, or the latest day with data): KPIs vs. the hitch average so far, teams with their projects and permits, poles by project and task, every row. Downloads as a PDF |
+| **Hitches** | `#/hitches` | Hitch schedule timeline; pick any hitch to see its totals, teams and who was paired with whom. **Hitch report** PDF: projects worked, poles collected, teams and what each collected, poles by hitch day and task |
 | **Production** | `#/production` | By OPCO / umbrella / team / person / task / hitch, with drill-down into the rows behind each number |
 | **Projects** | `#/projects`, `#/projects/:opco` | Every OPCO and umbrella: poles this hitch, pace (last 4 hitches), permits by status, task mix, top teams. (Field queue, projected finish and due-date risk deferred with the field schedules.) |
 | **Teams** | `#/teams` | Current pairs as cards, team totals for the hitch, pinned teams first |
-| **People** | `#/people`, `#/people/:name` | Profile: most-worked OPCO, average poles per day, days worked, best hitch, consistency, solo/logger/partner split, most frequent partners, task mix, trend over hitches |
+| **People** | `#/people`, `#/people/:name` | Profile: most-worked OPCO, average poles per day, days worked, best hitch, consistency, solo/logger/partner split, most frequent partners, task mix, trend over hitches, production by day (filterable by hitch) |
 | **Permit** | `#/permit/:id` | Full permit detail (§6.1) |
 | **Search** | Ctrl+K anywhere, `#/search` | Permits, people, OPCOs, umbrellas and notes, with field filters |
 | **Upload queue** | `#/queue` | The admin's queue (§6.2) |
 | **Data quality** | `#/quality` | Everything clean-up fixed or flagged, linked to Excel row numbers |
 | **Settings** | `#/settings` | Folder connection and the workbooks loaded |
+
+Every table has an **Export** button that saves all its rows (not just the page shown) as an Excel file.
 
 ### 6.1 Permit search and detail
 
@@ -228,8 +231,11 @@ last field date, overall status and total poles. Every permit has a shareable li
 Clicking through goes to the people, the OPCO, or any hitch the permit was worked in.
 
 ### 6.2 Upload queue (field admin)
-- **Rule:** `Status = Complete` **and** `Task ∈ {KATAPULT, PCI, GO BACKS, POWER PCI}` **and** Uploaded to Katapult
-  is not `Yes`. **STAKING is left out** (decided).
+- **Rule:** `Status = Complete` **and** the job is finished **and** `Task ∈ {KATAPULT, PCI, GO BACKS, POWER PCI}`
+  **and** Uploaded to Katapult is not `Yes`. **STAKING is left out** (decided). A job is one permit + task; it's
+  finished when its latest row with a status is Complete, so a job marked Complete and then worked again later
+  waits until it's Complete again. Only the Complete row is queued: the admin marks that row, not the job's
+  earlier In Progress days (in the 2026 tracker, 14 of ~2,000 such rows were ever marked).
 - Sorted by age; filters for hitch, OPCO, umbrella, team and task. Many old rows may never have been marked, so
   the queue also offers a "show older than N hitches" filter.
 - Check jobs off → they go into the **pending-changes tray** → **Save** (§8).

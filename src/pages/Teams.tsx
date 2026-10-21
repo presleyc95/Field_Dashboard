@@ -70,7 +70,7 @@ export function Teams() {
       </div>
 
       <Panel title="Pairings this year" actions={<span className="text-xs text-fg-subtle">Pairs who worked together most</span>}>
-        <Table columns={PAIRING_COLUMNS} rows={pairings.slice(0, 30)} rowKey={(p) => p.key} />
+        <Table columns={PAIRING_COLUMNS} rows={pairings.slice(0, 30)} exportRows={pairings} rowKey={(p) => p.key} exportName="Pairings" />
       </Panel>
     </div>
   );

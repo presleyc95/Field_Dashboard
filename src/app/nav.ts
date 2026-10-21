@@ -1,6 +1,7 @@
 import {
   CalendarRange,
   ClipboardCheck,
+  FileText,
   FolderKanban,
   Gauge,
   LineChart,
@@ -20,6 +21,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { path: "/", label: "Command Center", icon: Gauge },
+  { path: "/daily", label: "Daily Report", icon: FileText },
   { path: "/hitches", label: "Hitches", icon: CalendarRange },
   { path: "/production", label: "Production", icon: LineChart },
   { path: "/projects", label: "Projects", icon: FolderKanban },

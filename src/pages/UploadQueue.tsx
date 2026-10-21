@@ -71,7 +71,7 @@ export function UploadQueue() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <KpiCard label="Awaiting upload" value={formatInt(queue.length)} invert footnote="Completed rows not marked Yes" />
+        <KpiCard label="Awaiting upload" value={formatInt(queue.length)} invert footnote="Completed jobs not marked Yes" />
         <KpiCard label="Poles" value={formatInt(poles)} footnote="On those rows" />
         <KpiCard
           label="Oldest"
@@ -175,6 +175,8 @@ export function UploadQueue() {
         <Table
           columns={columns(editMode, pending, toggle, today)}
           rows={shown.slice(0, limit)}
+          exportRows={shown}
+          exportName="Upload queue"
           rowKey={(r) => r.id}
           onRowClick={editMode ? toggle : undefined}
           rowClassName={(r) => (pending[markKey(r)] ? "bg-accent/10" : undefined)}
@@ -203,6 +205,7 @@ function columns(
   const cols: Column<TrackerRecord>[] = [
     {
       header: "Date",
+      exportValue: (r) => r.date,
       cell: (r) => (
         <span className="whitespace-nowrap">
           {r.date ? formatShort(r.date, true) : "—"}
@@ -231,6 +234,7 @@ function columns(
   return [
     {
       header: "Uploaded",
+      noExport: true,
       cell: (r) => (
         <input
           type="checkbox"

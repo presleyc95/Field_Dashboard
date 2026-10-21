@@ -42,6 +42,12 @@ export type TrackerRecord = {
   mileage: number | null;
   notes: string | null;
   uploaded: boolean;
+  /**
+   * The job (permit + task) this row belongs to is finished: its latest row with a known status is
+   * Complete. Rows without a permit stand alone. A Complete row whose job was picked back up
+   * later isn't ready to upload.
+   */
+  jobComplete: boolean;
 };
 
 export type IssueKind =

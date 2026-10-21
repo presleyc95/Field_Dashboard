@@ -1,5 +1,6 @@
 import { createHashRouter } from "react-router";
 import { CommandCenter } from "@/pages/CommandCenter";
+import { DailyReport } from "@/pages/DailyReport";
 import { Hitches } from "@/pages/Hitches";
 import { People } from "@/pages/People";
 import { PersonProfile } from "@/pages/PersonProfile";
@@ -24,6 +25,7 @@ export const router = createHashRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <CommandCenter /> },
+      { path: "daily", element: <DailyReport /> },
       { path: "hitches", element: <Hitches /> },
       { path: "production", element: <Production /> },
       { path: "projects", element: <Projects /> },

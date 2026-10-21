@@ -33,6 +33,7 @@ export function Settings() {
                 columns={workbookColumns(files)}
                 rows={dataset?.sources ?? []}
                 rowKey={(s) => s.name}
+                exportName="Workbooks"
               />
             </div>
 

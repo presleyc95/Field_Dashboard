@@ -197,7 +197,7 @@ export function Quality() {
             )
           }
         >
-          <Table columns={COLUMNS} rows={filtered.slice(0, limit)} rowKey={(r) => `${r.source}|${r.excelRow}|${r.code}|${r.field}|${r.message}`} empty="No issues match" />
+          <Table columns={COLUMNS} rows={filtered.slice(0, limit)} exportRows={filtered} exportName="Data quality issues" rowKey={(r) => `${r.source}|${r.excelRow}|${r.code}|${r.field}|${r.message}`} empty="No issues match" />
           {filtered.length > limit && (
             <button
               type="button"

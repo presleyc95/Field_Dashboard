@@ -127,7 +127,7 @@ export function Search() {
               )
             }
           >
-            <Table columns={PERMIT_COLUMNS} rows={results.permits.hits} rowKey={(h) => h.permit.key} empty="No permits match" />
+            <Table columns={PERMIT_COLUMNS} rows={results.permits.hits} rowKey={(h) => h.permit.key} empty="No permits match" exportName="Search permits" />
             {results.permits.total > results.permits.hits.length && (
               <button
                 type="button"
@@ -176,7 +176,7 @@ export function Search() {
 
           {results.notes.total > 0 && (
             <Panel title={`Notes · ${formatInt(results.notes.total)}`}>
-              <Table columns={noteColumns(parsed.text)} rows={results.notes.records} rowKey={(r) => r.id} />
+              <Table columns={noteColumns(parsed.text)} rows={results.notes.records} rowKey={(r) => r.id} exportName="Search notes" />
             </Panel>
           )}
         </>
@@ -196,7 +196,7 @@ const PERMIT_COLUMNS: Column<PermitHit>[] = [
   },
   { header: "OPCO", cell: (h) => h.permit.opcos.join(", ") },
   { header: "Tasks", cell: (h) => <span className="text-xs text-fg-muted">{h.permit.tasks.join(" · ")}</span> },
-  { header: "Last worked", cell: (h) => (h.permit.lastDate ? formatShort(h.permit.lastDate, true) : "—"), className: "whitespace-nowrap" },
+  { header: "Last worked", cell: (h) => (h.permit.lastDate ? formatShort(h.permit.lastDate, true) : "—"), exportValue: (h) => h.permit.lastDate, className: "whitespace-nowrap" },
   { header: "Rows", cell: (h) => formatInt(h.permit.recordIds.length), numeric: true },
   { header: "Status", cell: (h) => <StatusBadge status={h.overall} short /> },
   { header: "Match", cell: (h) => <span className="text-xs text-fg-subtle">{TIER_LABEL[h.tier]}</span> },
@@ -204,7 +204,7 @@ const PERMIT_COLUMNS: Column<PermitHit>[] = [
 
 function noteColumns(text: string): Column<TrackerRecord>[] {
   return [
-    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), className: "whitespace-nowrap" },
+    { header: "Date", cell: (r) => (r.date ? formatShort(r.date, true) : "—"), exportValue: (r) => r.date, className: "whitespace-nowrap" },
     { header: "Tech", cell: (r) => r.tech ?? "—", className: "whitespace-nowrap" },
     {
       header: "Permit",

@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import { ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { personPath } from "@/app/paths";
+import { Button } from "@/components/Button";
 import { BarList } from "@/components/charts/BarList";
 import { ColumnChart } from "@/components/charts/ColumnChart";
 import { TaskMix } from "@/components/charts/TaskMix";
@@ -14,7 +15,9 @@ import { formatShort } from "@/data/dates";
 import { dailyPoles, groupRecords, type Group, type HitchSummary, recordsInHitch } from "@/data/metrics";
 import type { Dataset } from "@/data/types";
 import { cn } from "@/lib/cn";
+import { hitchReport } from "@/data/reports";
 import { formatInt, formatNumber, formatRate, hitchRange } from "@/lib/format";
+import { downloadHitchReport } from "@/lib/reportPdfs";
 import { useFocusHitch, useHitchSummaries } from "@/state/metrics";
 import { useTracker } from "@/state/tracker";
 
@@ -70,6 +73,7 @@ export function Hitches() {
             rowKey={(s) => s.hitch.id}
             onRowClick={(s) => select(s.hitch.id)}
             rowClassName={(s) => cn(s.hitch.id === selectedId && "bg-accent/10")}
+            exportName="Hitch schedule"
           />
         </div>
       </Panel>
@@ -95,6 +99,16 @@ function HitchDetail({
   const daily = useMemo(() => dailyPoles(dataset, s.hitch), [dataset, s.hitch]);
 
   const stateLabel = s.state === "current" ? "Current hitch" : s.state === "upcoming" ? "Upcoming hitch" : "Past hitch";
+  const [busy, setBusy] = useState(false);
+  const downloadReport = async () => {
+    setBusy(true);
+    try {
+      const state = s.state === "current" ? `in progress, ${s.daysCovered} of ${s.hitch.days} days in` : s.state === "past" ? "complete" : "upcoming";
+      await downloadHitchReport(hitchReport(dataset, s.hitch.id), state);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <>
@@ -111,7 +125,12 @@ function HitchDetail({
               {s.state === "current" && ` · data for ${s.daysCovered} so far`}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {s.rows > 0 && (
+              <Button variant="primary" onClick={() => void downloadReport()} disabled={busy} title="Projects, poles and teams for this hitch as a PDF">
+                <FileDown size={16} /> {busy ? "Building…" : "Hitch report"}
+              </Button>
+            )}
             <NavButton disabled={s.hitch.id === 0} onClick={() => onSelect(s.hitch.id - 1)} label="Previous hitch">
               <ChevronLeft size={16} /> Prev
             </NavButton>
@@ -164,7 +183,7 @@ function HitchDetail({
           </div>
 
           <Panel title={`Teams · ${teams.length}`} actions={<span className="text-xs text-fg-subtle">Who was paired with whom</span>}>
-            <Table columns={TEAM_COLUMNS} rows={teams} rowKey={(t) => t.key} />
+            <Table columns={TEAM_COLUMNS} rows={teams} rowKey={(t) => t.key} exportName={`Teams ${s.hitch.start}`} />
           </Panel>
         </>
       )}
