@@ -15,10 +15,12 @@ type TableProps<T> = {
   rowKey: (row: T) => string | number;
   empty?: string;
   rowClassName?: (row: T) => string | undefined;
+  /** Makes rows clickable (a link or button in the row stays the keyboard route). */
+  onRowClick?: (row: T) => void;
 };
 
 /** Compact Tremor-style table: caps header, hairline rows, right-aligned tabular numbers. */
-export function Table<T>({ columns, rows, rowKey, empty = "Nothing to show", rowClassName }: TableProps<T>) {
+export function Table<T>({ columns, rows, rowKey, empty = "Nothing to show", rowClassName, onRowClick }: TableProps<T>) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
@@ -48,7 +50,11 @@ export function Table<T>({ columns, rows, rowKey, empty = "Nothing to show", row
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className={cn("border-b border-line-subtle hover:bg-raised/50", rowClassName?.(row))}>
+              <tr
+                key={rowKey(row)}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={cn("border-b border-line-subtle hover:bg-raised/50", onRowClick && "cursor-pointer", rowClassName?.(row))}
+              >
                 {columns.map((c) => (
                   <td
                     key={c.header}

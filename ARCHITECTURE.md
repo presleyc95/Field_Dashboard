@@ -145,8 +145,10 @@ Any OPCO not listed shows under its own name.
 ### Hitch logic
 - Current hitch = the hitch containing today's date; otherwise "Off hitch: next starts <date>".
 - Each hitch shows "day X of 8"; rows outside every hitch are tagged **off-hitch**.
-- The **hitch picker** in the header controls what every page shows: current hitch, any past hitch, or a custom
-  date range.
+- Picking a period: the Command Center always shows the current hitch (compared with the same days of the last
+  one). The Hitches page selects a hitch (`?h=`), and Production has its own period picker (any hitch, last 4
+  hitches, year to date, all data), each kept in the URL so views can be shared. A single header-wide picker
+  was planned, but per-page pickers turned out clearer; revisit if People/Teams need the same control.
 
 ---
 
@@ -272,7 +274,7 @@ in the dashboard → Save.
 
 ```
 src/
-  app/            routes, layout, header with hitch picker, Ctrl+K search
+  app/            routes, layout, header, Ctrl+K search
   data/
     worker.ts     SheetJS parse (Web Worker)
     clean.ts      clean-up rules + data-quality log

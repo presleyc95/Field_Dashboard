@@ -1,26 +1,24 @@
 import { createHashRouter } from "react-router";
 import { CommandCenter } from "@/pages/CommandCenter";
+import { Hitches } from "@/pages/Hitches";
+import { Production } from "@/pages/Production";
 import { Permit } from "@/pages/Permit";
 import { Placeholder } from "@/pages/Placeholder";
 import { Search } from "@/pages/Search";
 import { Settings } from "@/pages/Settings";
 import { Layout } from "./Layout";
+import { RouteError } from "./RouteError";
 
 // Hash routes (#/permit/...) because GitHub Pages can't route paths on the server.
 export const router = createHashRouter([
   {
     path: "/",
     element: <Layout />,
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <CommandCenter /> },
-      {
-        path: "hitches",
-        element: <Placeholder title="Hitches" step={4} description="Hitch schedule timeline; pick any hitch to see its totals, teams and pairings." />,
-      },
-      {
-        path: "production",
-        element: <Placeholder title="Production" step={4} description="Production by OPCO, umbrella, team, person, task and hitch, with drill-down to rows." />,
-      },
+      { path: "hitches", element: <Hitches /> },
+      { path: "production", element: <Production /> },
       {
         path: "projects/:opco?",
         element: <Placeholder title="Projects" step={5} description="Progress per OPCO, burn-down against the scope sheets, projected finish and due-date risk." />,
