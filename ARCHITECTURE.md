@@ -37,7 +37,7 @@ Status: planned, not built. Decisions below were settled on 2026-10-21.
 | Reading the workbook | SheetJS, run in a Web Worker | Parsing a ~4 MB workbook doesn't freeze the page |
 | Writing the workbook | JSZip, editing cells in the sheet XML (see §8) | Every other part of the file stays byte-for-byte the same |
 | State | Zustand | Small and simple |
-| Saved settings | idb-keyval (IndexedDB) | Remembers the folder handle, the viewer's pins and preferences |
+| Saved settings | idb-keyval (IndexedDB) | Remembers the folder handle and cached past-year trackers |
 | Routing | Hash router (`#/permit/...`) | GitHub Pages has no server-side routing, so normal URLs would 404 on refresh |
 
 ---
@@ -198,7 +198,7 @@ Any OPCO not listed shows under its own name.
 | **Search** | Ctrl+K anywhere, `#/search` | Permits, people, OPCOs, umbrellas and notes, with field filters |
 | **Upload queue** | `#/queue` | The admin's queue (§6.2) |
 | **Data quality** | `#/quality` | Everything clean-up fixed or flagged, linked to Excel row numbers |
-| **Settings** | `#/settings` | Folder connection, "I am…" (default view), pins, edit mode |
+| **Settings** | `#/settings` | Folder connection and the workbooks loaded |
 
 ### 6.1 Permit search and detail
 
@@ -244,20 +244,15 @@ Clicking through goes to the people, the OPCO, or any hitch the permit was worke
 
 ---
 
-## 7. Roles and permissions
+## 7. Who can edit
 
-| Role | Access | Default view |
-|---|---|---|
-| Field admin | **Edit** access to the tracker's SharePoint library | Upload queue |
-| Coordinator | **Read** access | Their pinned people and teams |
-| Manager | **Read** access | Command center, all teams |
+**Decided 2026-10-21: no roles.** About four people use the dashboard, so there are no roles, "I am…" views or
+pins (the planned step 8 is dropped). Everyone sees the same dashboard.
 
-- The app can't tell who someone is, so **SharePoint permissions do the enforcing**: a Read-only synced copy
-  can't be written, so saves fail even if edit mode is switched on.
-- When the app opens, it checks whether it can write to the folder. If it can't: edit mode is hidden and a
-  **View only** badge is shown. If it can: edit mode is still a deliberate switch.
-- "I am…" and pins (people and teams a coordinator follows) are stored in the viewer's browser. There's no roster
-  sheet.
+- The dashboard opens view-only. **Turn on editing** (Upload Queue) asks the browser for permission to change files
+  in the tracker folder; the sidebar shows whether editing is on.
+- SharePoint library permissions still decide who *can* save: someone with read-only access to the synced folder
+  can turn on editing, but the browser or OneDrive refuses the write, and nothing changes.
 
 ---
 
@@ -350,4 +345,4 @@ tests/            clean-up, hitch logic, metrics, write-back file comparison
 5. People, Teams, Projects (field schedules deferred).
 6. Data quality page.
 7. Upload queue and write-back, with the file-comparison test and an Excel check on a copy of the tracker.
-8. Roles (write check, View only badge), "I am…", pins.
+8. ~~Roles, "I am…", pins~~ — dropped 2026-10-21 (about four users; see §7).

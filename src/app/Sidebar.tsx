@@ -3,6 +3,7 @@ import { NavLink } from "react-router";
 import { cn } from "@/lib/cn";
 import { formatInt } from "@/lib/format";
 import { type Phase, useTracker } from "@/state/tracker";
+import { useUploads } from "@/state/uploads";
 import { NAV_ITEMS } from "./nav";
 
 type SidebarProps = {
@@ -79,6 +80,7 @@ function ConnectionStatus() {
   const fileName = useTracker((s) => s.fileName);
   const rows = useTracker((s) => s.dataset?.records.length);
   const refreshing = useTracker((s) => s.refreshing);
+  const editMode = useUploads((s) => s.editMode);
 
   const dot =
     phase === "ready"
@@ -103,7 +105,7 @@ function ConnectionStatus() {
           Tracker: {fileName ? fileName.replace(/\.xlsx$/i, "") : "—"}
         </div>
         <div>Rows: {rows !== undefined ? formatInt(rows) : "—"}</div>
-        <div>Mode: view only</div>
+        <div className={editMode ? "text-accent" : undefined}>Mode: {editMode ? "editing" : "view only"}</div>
       </div>
     </NavLink>
   );
