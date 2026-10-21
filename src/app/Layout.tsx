@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
 import { CommandPalette, usePaletteShortcut } from "@/components/CommandPalette";
+import { UploadTray } from "@/components/UploadTray";
 import { useTrackerLifecycle } from "@/state/hooks";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -20,6 +21,7 @@ export function Layout() {
         </main>
       </div>
       <CommandPalette />
+      <UploadTray />
     </div>
   );
 }

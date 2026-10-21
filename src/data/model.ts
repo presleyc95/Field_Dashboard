@@ -34,6 +34,9 @@ export function yearOf(name: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+/** Tasks that are logged time rather than field work; a blank Status is fine for these. */
+const NO_STATUS_TASKS = new Set(["COORDINATION", "DRIVE TIME"]);
+
 /** Rows dated more than this far outside their workbook's year are flagged. */
 const YEAR_SLACK_DAYS = 14;
 
@@ -80,9 +83,11 @@ export function buildDataset(input: RawWorkbook | RawWorkbook[], today: ISODate)
     if (tech && techName !== tech) log.add(r, "Tech Name", "fixed", "name-spelling", `"${tech}" read as ${techName}`, tech);
     if (partner && partnerName !== partner) log.add(r, "Paired With", "fixed", "name-spelling", `"${partner}" read as ${partnerName}`, partner);
     if (!techName) log.add(r, "Tech Name", "flag", "missing-tech", "No tech name", "");
-    if (techName && partnerName && techName === partnerName) {
-      log.add(r, "Paired With", "flag", "paired-with-self", "Tech is paired with themself", partnerName);
-    }
+    // A tech listed as their own partner is read as solo (not flagged, by request).
+
+    const task = cleanTask(row.task, r, log);
+    // Coordinator and Drive Time rows are logged time, not field work: no status needed.
+    const statusRequired = !permit.isPlaceholder && !(task && NO_STATUS_TASKS.has(task));
 
     let permitId = permit.text;
     if (permit.key && permit.text) {
@@ -107,8 +112,8 @@ export function buildDataset(input: RawWorkbook | RawWorkbook[], today: ISODate)
       date: cleanDate(row.date, r, log),
       hitchId: null,
       hitchDay: null,
-      task: cleanTask(row.task, r, log),
-      status: cleanStatus(row.status, r, log),
+      task,
+      status: cleanStatus(row.status, r, log, statusRequired),
       poles: cleanNumber(row.poles, "Poles Collected", r, log),
       hoursOnPermit: cleanNumber(row.hoursOnPermit, "Hours on Permit", r, log),
       driveHours: cleanNumber(row.driveHours, "Drive Time", r, log),

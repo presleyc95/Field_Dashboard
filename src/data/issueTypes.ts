@@ -8,7 +8,6 @@ export const ISSUE_TYPES: Record<string, IssueType> = {
   // Flags: something to check in the tracker.
   "missing-status": { title: "Missing status", help: "Set Status to Complete or In Progress." },
   "unknown-status": { title: "Status not recognized", help: "Use Complete or In Progress." },
-  "paired-with-self": { title: "Tech paired with themself", help: "Fix Paired With (the partner's name, or N/A for solo)." },
   "possible-duplicate": {
     title: "Both partners logged the same job",
     help: "One row normally covers the pair. Delete one row, or set it to the other person's work, so poles aren't counted twice.",

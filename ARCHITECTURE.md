@@ -287,6 +287,20 @@ piece, and only `sheet1.xml` and `workbook.xml` may differ. Then open the result
 **Admin's morning routine:** paste the Smartsheet rows in Excel → save → close Excel → work the upload queue
 in the dashboard → Save.
 
+**As built (step 7, 2026-10-21):**
+- Code: `src/file/xlsxPatch.ts` (cell edits, runs in the data worker), `src/file/writeback.ts` (the save steps),
+  `src/state/uploads.ts` (edit mode and the pending tray, kept in localStorage so a reload doesn't lose marks).
+- "Turn on editing" on the Upload Queue asks the browser for write access to the folder. Marks can be made on the
+  queue (checkbox or row click, or "mark all shown") and on a permit's rows table.
+- Checked against a copy of the real 2026 tracker: only `xl/worksheets/sheet1.xml` and `xl/workbook.xml` change
+  (every other part identical when unzipped; JSZip re-compresses, so the file is smaller but the content is the same);
+  the marked copy opened in Excel with alerts on, no repair prompt, 12 sheets, table and pivot intact, cells = Yes.
+- Full flow tested in the browser on test copies (origin-private storage): load, editing on, mark, save, backup,
+  log, confirm, reload. **Not yet tested:** the refusal when the tracker is open in Excel on the real synced folder.
+
+**Data-quality rules changed 2026-10-21 (by request):** Coordinator and Drive Time rows don't need a Status, and a
+tech listed as their own partner is no longer flagged (it's read as solo). The Hitches page has a month calendar.
+
 ---
 
 ## 9. Look and feel

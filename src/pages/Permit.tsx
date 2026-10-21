@@ -8,12 +8,14 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { type Column, Table } from "@/components/Table";
 import { permitKey } from "@/data/clean";
 import { formatShort } from "@/data/dates";
+import { awaitingUpload } from "@/data/metrics";
 import { summarizePermit, type TaskSummary, type TimelineEntry } from "@/data/permitSummary";
 import type { Dataset, Hitch, TrackerRecord } from "@/data/types";
 import { cn } from "@/lib/cn";
 import { formatInt, formatNumber, hitchRange, rowLabel } from "@/lib/format";
 import { usePermitsByKey } from "@/state/search";
 import { useTracker } from "@/state/tracker";
+import { markKey, type PendingMark, useUploads } from "@/state/uploads";
 
 export function Permit() {
   const { id = "" } = useParams();
@@ -22,6 +24,7 @@ export function Permit() {
   const permits = usePermitsByKey();
   const permit = permits?.get(permitKey(id));
   const summary = useMemo(() => (dataset && permit ? summarizePermit(dataset, permit) : null), [dataset, permit]);
+  const { editMode, pending, toggle } = useUploads();
 
   if (!dataset) {
     return (
@@ -144,7 +147,12 @@ export function Permit() {
 
       {/* 4. All rows */}
       <Panel title={`All rows · ${s.records.length}`}>
-        <Table columns={rowColumns(dataset)} rows={s.records} rowKey={(r) => r.id} />
+        <Table
+          columns={editMode ? [markColumn(pending, toggle), ...rowColumns(dataset)] : rowColumns(dataset)}
+          rows={s.records}
+          rowKey={(r) => r.id}
+          rowClassName={(r) => (pending[markKey(r)] ? "bg-accent/10" : undefined)}
+        />
       </Panel>
     </div>
   );
@@ -296,4 +304,21 @@ function rowColumns(dataset: Dataset): Column<TrackerRecord>[] {
     },
     { header: "Notes", cell: (r) => <span className="text-xs text-fg-muted">{r.notes ?? ""}</span>, className: "min-w-48" },
   ];
+}
+
+/** Edit mode: a checkbox on rows waiting for upload, feeding the same tray as the queue. */
+function markColumn(pending: Record<string, PendingMark>, toggle: (r: TrackerRecord) => void): Column<TrackerRecord> {
+  return {
+    header: "Mark",
+    cell: (r) =>
+      awaitingUpload(r) ? (
+        <input
+          type="checkbox"
+          checked={!!pending[markKey(r)]}
+          onChange={() => toggle(r)}
+          aria-label={`Mark row ${r.excelRow} uploaded`}
+          className="size-4 cursor-pointer accent-[var(--color-accent)]"
+        />
+      ) : null,
+  };
 }

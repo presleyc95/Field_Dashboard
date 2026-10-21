@@ -6,6 +6,7 @@ import { BarList } from "@/components/charts/BarList";
 import { ColumnChart } from "@/components/charts/ColumnChart";
 import { TaskMix } from "@/components/charts/TaskMix";
 import { ConnectionPrompt } from "@/components/ConnectionPrompt";
+import { HitchCalendar } from "@/components/HitchCalendar";
 import { KpiCard } from "@/components/KpiCard";
 import { Panel } from "@/components/Panel";
 import { type Column, Table } from "@/components/Table";
@@ -42,6 +43,10 @@ export function Hitches() {
   return (
     <div className="space-y-4">
       <HitchDetail dataset={dataset} summary={summaries[selectedId]!} count={summaries.length} onSelect={select} />
+
+      <Panel title="Hitch calendar" actions={<span className="text-xs text-fg-subtle">Click a hitch day to open that hitch</span>}>
+        <HitchCalendar dataset={dataset} selectedId={selectedId} onSelect={select} />
+      </Panel>
 
       <Panel title="Hitch schedule" actions={<span className="text-xs text-fg-subtle">Click a hitch to open it</span>}>
         <ColumnChart

@@ -103,7 +103,8 @@ export function cleanTask(cell: RawCell, row: number, log: IssueLog): string | n
 
 // ---- Status ------------------------------------------------------------------------------
 
-export function cleanStatus(cell: RawCell, row: number, log: IssueLog): Status {
+/** `required` false: a blank status isn't flagged (Coordinator and Drive Time rows). */
+export function cleanStatus(cell: RawCell, row: number, log: IssueLog, required = true): Status {
   const raw = tidyText(rawText(cell));
   const lower = raw.toLowerCase();
   if (lower === "complete" || lower === "completed") {
@@ -114,8 +115,11 @@ export function cleanStatus(cell: RawCell, row: number, log: IssueLog): Status {
     if (raw !== "In Progress") log.add(row, "Status", "fixed", "status-spelling", `"${raw}" read as In Progress`, raw);
     return "In Progress";
   }
-  if (!raw) log.add(row, "Status", "flag", "missing-status", "No status", "");
-  else log.add(row, "Status", "flag", "unknown-status", `Unrecognized status "${raw}"`, raw);
+  if (!raw) {
+    if (required) log.add(row, "Status", "flag", "missing-status", "No status", "");
+  } else {
+    log.add(row, "Status", "flag", "unknown-status", `Unrecognized status "${raw}"`, raw);
+  }
   return "Unknown";
 }
 

@@ -7,6 +7,7 @@ import { ProjectDetail } from "@/pages/ProjectDetail";
 import { Projects } from "@/pages/Projects";
 import { Quality } from "@/pages/Quality";
 import { Teams } from "@/pages/Teams";
+import { UploadQueue } from "@/pages/UploadQueue";
 import { Production } from "@/pages/Production";
 import { Permit } from "@/pages/Permit";
 import { Placeholder } from "@/pages/Placeholder";
@@ -33,10 +34,7 @@ export const router = createHashRouter([
       { path: "people/:name", element: <PersonProfile /> },
       { path: "permit/:id", element: <Permit /> },
       { path: "search", element: <Search /> },
-      {
-        path: "queue",
-        element: <Placeholder title="Upload Queue" step={7} description="Completed KATAPULT, PCI, GO BACKS and POWER PCI jobs not yet marked uploaded." />,
-      },
+      { path: "queue", element: <UploadQueue /> },
       { path: "quality", element: <Quality /> },
       { path: "settings", element: <Settings /> },
       {

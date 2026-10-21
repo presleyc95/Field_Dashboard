@@ -50,6 +50,12 @@ describe("cleanStatus", () => {
     expect(cleanStatus(undefined, 2, log)).toBe("Unknown");
     expect(log.issues.map((i) => i.code)).toEqual(["status-spelling", "unknown-status", "missing-status"]);
   });
+
+  it("doesn't flag a blank status when none is required", () => {
+    const log = new IssueLog();
+    expect(cleanStatus(undefined, 2, log, false)).toBe("Unknown");
+    expect(log.issues).toEqual([]);
+  });
 });
 
 describe("cleanUploaded", () => {

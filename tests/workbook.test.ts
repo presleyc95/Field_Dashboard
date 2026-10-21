@@ -131,6 +131,14 @@ describe.skipIf(!existsSync(WORKBOOK))("real tracker workbook", () => {
     expect(asDate.some((i) => i.original === "Mar-41")).toBe(true);
   });
 
+  it("doesn't ask for a status on Coordinator or Drive Time rows, or flag self-pairing", () => {
+    const missing = new Set(ds.issues.filter((i) => i.code === "missing-status").map((i) => i.excelRow));
+    const exempt = ds.records.filter((r) => r.isPlaceholder || r.task === "COORDINATION" || r.task === "DRIVE TIME");
+    expect(exempt.length).toBeGreaterThan(1_000);
+    expect(exempt.some((r) => missing.has(r.excelRow))).toBe(false);
+    expect(ds.issues.some((i) => i.code === "paired-with-self")).toBe(false);
+  });
+
   it("logs the known data problems", () => {
     const codes = new Set(ds.issues.map((i) => i.code));
     for (const code of [
@@ -139,7 +147,6 @@ describe.skipIf(!existsSync(WORKBOOK))("real tracker workbook", () => {
       "task-spelling",
       "permit-whitespace",
       "possible-duplicate",
-      "paired-with-self",
       "bad-number",
     ]) {
       expect(codes.has(code), code).toBe(true);
